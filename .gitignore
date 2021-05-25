@@ -1,0 +1,11 @@
+.Rproj.user
+.Rhistory
+.RData
+.Ruserdata
+labnotebook.md
+EnvironmentBackups/
+raw_data/
+sra_data/
+filtered_fastq/
+trimmed_fastq/
+Cariaco_euks_script.R
