@@ -1,7 +1,7 @@
 ---
 title: "Cariaco_Euks_PostAnalysis"
 author: "Liz Suter"
-date: "5/25/2020"
+date: "5/26/2020"
 output: html_notebook
 editor_options: 
   chunk_output_type: inline
@@ -12,18 +12,18 @@ library(tidyverse)
 library(phyloseq)
 library(dada2)
 library(Biostrings)
-library(DECIPHER)
+# library(DECIPHER)
 library(phangorn)
 library(readr)
 library(seqinr)
-library(decontam)
+# library(decontam)
 library(ape)
 library(vegan)
 #library(philr)
 library(RColorBrewer)
 library(microbiome)
 library(DESeq2)
-library(compositions);
+library(compositions)
 library(cowplot)
 library(plotly)
 library(htmlwidgets)
@@ -42,7 +42,7 @@ metadata <- read_csv("Metadata.csv")
 
 Import SRA table and match SRA IDs with sample IDs in metadata file
 ```{r}
-SRARunTable <- read_csv("SRA_into_DADA2/SraRunTable.txt")
+SRARunTable <- read_csv("sra_data/SraRunTable.txt")
 metadata <- left_join(metadata, SRARunTable, by = 'Sample Name')
 ```
 
@@ -70,9 +70,8 @@ count_table_df <- as.data.frame(count_table)
 
 # Plot the rarefaction curves, color-coding by the colors listed in sample_info_tab, which indicate sample type, and transforming using t() again
 # Running this 5-10 samples at a time because otherwise it takes a long time to render
-rarecurve(t(count_table_df)[1:5,], step=100, cex=0.5, ylab="ASVs", label=T)
+rarecurve(t(count_table_df), step=100, cex=0.5, ylab="ASVs", label=T)
 ```
-
 
 
 ### Remove singletons
@@ -139,11 +138,11 @@ Since that step takes a long time, save all variables up to this point in enviro
 
 Re-load
 ```{r}
-load("../../DatasetBackupv2/CariacoEuks_postanalysis_vars_upto_tree.RData")
+load("EnvironmentBackups/CariacoEuks_postanalysis_vars_upto_tree.RData")
 ```
 
 
-### Make phyloseq object
+### Make phyloseq objects
 
 Here we will do ordinations using the phyloseq package, which first requires making phyloseq objects out of each of our input data tables (in the last tutorial, I imported the tree using phyloseq so it is already a phyloseq object)
 
@@ -153,6 +152,7 @@ TAX	=	tax_table(as.matrix(taxonomy))
 META	=	sample_data(data.frame(metadata, row.names = metadata$`Sample Name`))
 TREE = phy_tree(fit$tree)
 ```
+
 
 
 First check that the inputs are in compatible formats by checking for ASV names with the phyloseq function, taxa_names
@@ -184,7 +184,7 @@ unique(tax_table(ps)[, "Supergroup"])
 ```
 
 
-Filter out those ambigious Supergorup annotations- losing 471 ASVs
+Filter out those ambigious Supergroup annotations- losing 471 ASVs
 ```{r}
 ps <- subset_taxa(ps, !is.na(Supergroup) & !Supergroup %in% c("", "NA"))
 table(tax_table(ps)[, "Supergroup"], exclude = NULL)
@@ -199,7 +199,6 @@ table(tax_table(ps)[, "Division"], exclude = NULL)
 Filter out any with "NA" as Division 
 ```{r}
 ps <- subset_taxa(ps, !is.na(Division) & !Division %in% c(""))
-
 table(tax_table(ps)[, "Division"], exclude = NULL)
 ```
 After the above, 13,427 ASVs remain from the original 14,177
@@ -211,6 +210,12 @@ taxa_to_keep <- !sample_names(ps) %in% c("AE3a198A","AE3b314A","AE2a200A","AE2b9
 ps <- prune_samples(taxa_to_keep, ps)
 ```
 41 samples remain and stil 13,427 ASVs
+
+Check rarefaction curve again to make sure those low-sqeuencing-effort samples have been removed
+```{r}
+rarecurve(t(otu_table(ps)), step=100, cex=0.5, ylab="ASVs", label=T)
+```
+
 
 
 ### Re-root tree 
@@ -260,7 +265,7 @@ is.binary.tree(phy_tree(ps))
 ## Abundance plots
 
 
-### All phyla
+### Check phyla from all samples
 
 Check overall how the phyla are distributed among samples. Phyloseq makes this easy
 
@@ -299,64 +304,118 @@ Division_barplot <- plot_bar(DivisionGlommed_RA, x = "Sample", fill = "Division"
 Division_barplot
 
 # export
-ggsave("../../../Figures/PostAnalysisv2/Division_barplot.eps",Division_barplot, width = 15, height = 5, units = c("in"))
+ggsave("Figures/Division_barplot.eps",Division_barplot, width = 15, height = 5, units = c("in"))
 ```
 
-**STOPPED HERE- MAKE BUBBLE PLOTS**
-Check abundance plots for some phyla of interest
 
 
-### The Proteobacteria
+
+
+
+
+### Prepare for bubble plots
+Average across sample replicates
 ```{r}
-# subset to proteobacteria
-ps_proteo_ra <- subset_taxa(ps_ra, phylum == "Proteobacteria")
 
-# define colors
-colourCount = length(table(tax_table(ps_proteo_ra)[, "order"], exclude = NULL))
-getPalette = colorRampPalette(brewer.pal(11, "Spectral"))
-OrderPalette = getPalette(colourCount)
+otu_table_mean_ra <- 
+  mutate(data.frame(otu_table(ps_ra)), "103A" = rowMeans(select(data.frame(otu_table(ps_ra)), c("AE3a103A","AE3b103A")), na.rm = TRUE)) %>%
+  mutate(data.frame(otu_table(ps_ra)), "198A" = rowMeans(select(data.frame(otu_table(ps_ra)), c("AE3b198A")), na.rm = TRUE))  %>% # Sample AE3a198A was removed
+  mutate(data.frame(otu_table(ps_ra)), "234A" = rowMeans(select(data.frame(otu_table(ps_ra)), c("AE3a234A","AE3b234A")), na.rm = TRUE)) %>%
+  mutate(data.frame(otu_table(ps_ra)), "295A" = rowMeans(select(data.frame(otu_table(ps_ra)), c("AE3a295A","AE3b295A")), na.rm = TRUE)) %>%
+  mutate(data.frame(otu_table(ps_ra)), "314A" = rowMeans(select(data.frame(otu_table(ps_ra)), c("AE3a314A")), na.rm = TRUE)) %>%  # Sample AE3b314A was removed
+  mutate(data.frame(otu_table(ps_ra)), "900AM" = rowMeans(select(data.frame(otu_table(ps_ra)), c("AE3a900AM","AE1b900AM")), na.rm = TRUE)) %>%
+  mutate(data.frame(otu_table(ps_ra)), "103B" = rowMeans(select(data.frame(otu_table(ps_ra)), c("AE3a103B","AE3b103B")), na.rm = TRUE)) %>%
+  mutate(data.frame(otu_table(ps_ra)), "198B" = rowMeans(select(data.frame(otu_table(ps_ra)), c("AE3a198B","AE3b198B")), na.rm = TRUE)) %>%
+  mutate(data.frame(otu_table(ps_ra)), "234B" = rowMeans(select(data.frame(otu_table(ps_ra)), c("AE3a234B","AE3b234B")), na.rm = TRUE)) %>%
+  mutate(data.frame(otu_table(ps_ra)), "295B" = rowMeans(select(data.frame(otu_table(ps_ra)), c("AE3a295B","AE3b295B")), na.rm = TRUE)) %>%
+  mutate(data.frame(otu_table(ps_ra)), "314B" = rowMeans(select(data.frame(otu_table(ps_ra)), c("AE3a314B","AE3b314B")), na.rm = TRUE)) %>%
+  mutate(data.frame(otu_table(ps_ra)), "900BM" = rowMeans(select(data.frame(otu_table(ps_ra)), c("AE3a900BM","AE1b900BM")), na.rm = TRUE)) %>%
+  mutate(data.frame(otu_table(ps_ra)), "143A" = rowMeans(select(data.frame(otu_table(ps_ra)), c("AE2a143A","AE2b143A")), na.rm = TRUE)) %>%
+  mutate(data.frame(otu_table(ps_ra)), "200A" = rowMeans(select(data.frame(otu_table(ps_ra)), c("AE2b200A")), na.rm = TRUE)) %>% # AE2a200A was removed
+  mutate(data.frame(otu_table(ps_ra)), "237A" = rowMeans(select(data.frame(otu_table(ps_ra)), c("AE2a237A","AE2b237A")), na.rm = TRUE)) %>%
+  mutate(data.frame(otu_table(ps_ra)), "247A" = rowMeans(select(data.frame(otu_table(ps_ra)), c("AE2a247A","AE2b247A")), na.rm = TRUE)) %>%
+  mutate(data.frame(otu_table(ps_ra)), "267A" = rowMeans(select(data.frame(otu_table(ps_ra)), c("AE2a267A","AE2b267A")), na.rm = TRUE)) %>%
+  mutate(data.frame(otu_table(ps_ra)), "900AN" = rowMeans(select(data.frame(otu_table(ps_ra)), c("AE2a900AN")), na.rm = TRUE)) %>% # AE2b900AN was removed
+  mutate(data.frame(otu_table(ps_ra)), "143B" = rowMeans(select(data.frame(otu_table(ps_ra)), c("AE2a143B","AE2b143B")), na.rm = TRUE)) %>%
+  mutate(data.frame(otu_table(ps_ra)), "200B" = rowMeans(select(data.frame(otu_table(ps_ra)), c("AE2b200B")), na.rm = TRUE)) %>% # AE2a200B was removed
+  mutate(data.frame(otu_table(ps_ra)), "237B" = rowMeans(select(data.frame(otu_table(ps_ra)), c("AE2a237B","AE2b237B")), na.rm = TRUE)) %>%
+  mutate(data.frame(otu_table(ps_ra)), "247B" = rowMeans(select(data.frame(otu_table(ps_ra)), c("AE2a247B","AE2b247B")), na.rm = TRUE)) %>%
+  mutate(data.frame(otu_table(ps_ra)), "267B" = rowMeans(select(data.frame(otu_table(ps_ra)), c("AE2b267B")), na.rm = TRUE)) %>% # AE2a267B was removed
+  mutate(data.frame(otu_table(ps_ra)), "900BN" = rowMeans(select(data.frame(otu_table(ps_ra)), c("AE2b900BN")), na.rm = TRUE)) # AE2a900BN was removed
 
-# Then aglomerate the ASVs at the phylum level using the phyloseq function, tax_glom
-orderGlommed_RA = tax_glom(ps_proteo_ra, "order")
-# and plot
-proteobac_orders_barplot <- plot_bar(orderGlommed_RA, fill = "order") + 
-  scale_fill_manual(values = OrderPalette)
+otu_table_mean_ra <- otu_table_mean_ra[,unique(metadata$Replicate)]
 
-proteobac_orders_barplot
+#otu_table_mean_ra <- as_tibble(otu_table_mean_ra, rownames = "SampleID")
 
-# export
-ggsave("figures/proteobac_orders_barplot.eps",proteobac_orders_barplot, width = 15, height = 5, units = c("in"))
-
+otu_table_mean_ra
 ```
 
-
-### The Actinobacteriota 
+Make into phyloseq object
 ```{r}
-# subset 
-ps_actino_ra <- subset_taxa(ps_ra, phylum == "Actinobacteriota")
+ps_ra_mean <- phyloseq(otu_table(otu_table_mean_ra, taxa_are_rows = TRUE), TAX)
+```
 
-# define colors
-colourCount = length(table(tax_table(ps_actino_ra)[, "order"], exclude = NULL))
-getPalette = colorRampPalette(brewer.pal(11, "Spectral"))
-OrderPalette = getPalette(colourCount)
+## CONTINUE HERE
 
-# Then aglomerate the ASVs at the phylum level using the phyloseq function, tax_glom
-actino_orderGlommed_RA = tax_glom(ps_actino_ra, "order")
-# and plot
-actino_orders_barplot <- plot_bar(actino_orderGlommed_RA, fill = "order") + 
-  scale_fill_manual(values = OrderPalette)
+```{r}
+# First aglomerate the ASVs at the phylum level using the phyloseq function, tax_glom
 
-actino_orders_barplot
-
-ggsave("figures/actino_orders_barplot.eps",actino_orders_barplot, width = 15, height = 5, units = c("in"))
+tax_glom(ps_ra_mean, "Division")
 ```
 
 
-I could keep going with this. There are several other phyla that are abundant: Acidobacteriota, Bacteroidota, Bdellovibrionota, Campilobacterota, Chloroflexi, Cyanobacteria, Dependentiae, Desulfobacterota, Elusimicrobiota, Firmicutes, Myxococcota, Patescibacteria, Planctomycetota, Verrucomicrobiota.
+
+Link taxonomy to mean RA table- COME BACK HERE AND USE GLOMMED DATA TO SEE PHYLA BUBBLE PLOTS ETC
+```{r}
+otu_table_mean_ra <- left_join(otu_table_mean_ra, as_tibble(taxonomy, rownames = "SampleID"))
+otu_table_mean_ra
+```
+
+
+Pivot longer
+```{r}
+otu_table_mean_ra <- pivot_longer(otu_table_mean_ra, cols = unique(metadata$Replicate), names_to = "Replicate")
+otu_table_mean_ra
+```
+
+
+Join metadata 
+```{r}
+otu_table_mean_ra <- left_join(otu_table_mean_ra, unique(select(metadata, c("Replicate", "Depth", "SizeFraction", "Season", "OxCond", "Fluorescence", "BeamAtt", "O2", "Temp", "Salinity", "H2S", "ParticulateS", "TZVS", "CH4", "NO3", "NO2", "NH4", "PO4", "Chemoautotrophy", "BNP", "MicroAbun(x10^8 L^-1)", "FlagAbun(x10^5 L-1)", "VLP(x10^8 L-1)"))), by = "Replicate")
+otu_table_mean_ra
+```
+
+
+### Bubble plots- MODIFY
+
+```{r}
+#C212A
+p1 = ggplot(otu_table_mean_ra,aes (x = Depth, y = fct_rev(as_factor(Taxonomy2))))+ # the fancy stuff around y (Taxonomy2) just helps to present it in reverse order in the plot (from top to btm alphabetically)
+  geom_point(aes(size = C212A))+
+  scale_x_discrete(limits=c("O1","O2","O3","A1","A2","E"))+
+  scale_size_area(breaks = c(0,.25,.5,.75,1), max_size = 6)+
+  xlab("")+
+  ylab("")+
+  labs(size="Relative Abundance")+
+  ggtitle("C212A")+
+  theme_bw()+
+  theme(axis.text.x = element_text(size=12),
+        axis.text.y = element_text(size=12),
+        axis.title.x= element_text(size=16),
+        axis.title.y= element_text(size=16))+
+  theme(legend.position="none")
+```
 
 
 
 
+
+
+
+
+
+
+# ALL BELOW IS FROM ANOTHER NOTEBOOK. NEEDS MODIFICATION
 
 ## Ordinations 
 
