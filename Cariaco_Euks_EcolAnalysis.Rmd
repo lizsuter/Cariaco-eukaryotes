@@ -7,6 +7,8 @@ editor_options:
   chunk_output_type: inline
 ---
 
+# Load libraries
+
 ```{r}
 library(tidyverse)
 library(phyloseq)
@@ -31,9 +33,9 @@ library(withr)
 ```
 
 
-## Prepare the data
+# Prepare the data
 
-### Import 
+## Import 
 
 Metadata:
 ```{r}
@@ -61,6 +63,8 @@ taxonomy <- read_tsv(file="dada2_export/ASVs_taxonomy.tsv")
 taxonomy <- column_to_rownames(taxonomy, var = colnames(taxonomy)[1])
 ```
 
+
+## QC and Filtering
 
 ### Rarefaction curves
 
@@ -130,10 +134,10 @@ Use phangorn package to build tree. Here we are building a maximum likelihood ne
 # fit = pml(treeNJ, data=phang.align) # compute intermal max likelihood
 ```
 
-### Save and re-load dataset
-Since that step takes a long time, save all variables up to this point in environmnet as RData object
+#### Save and re-load dataset
+Since the step above takes a long time, save all variables up to this point in environment as RData object
 ```{r}
-# save.image("../../DatasetBackupv2/CariacoEuks_postanalysis_vars_upto_tree.RData")
+# save.image("EnvironmentBackups/CariacoEuks_postanalysis_vars_upto_tree.RData")
 ```
 
 Re-load
@@ -211,6 +215,8 @@ ps <- prune_samples(taxa_to_keep, ps)
 ```
 41 samples remain and stil 13,427 ASVs
 
+
+
 Check rarefaction curve again to make sure those low-sqeuencing-effort samples have been removed
 ```{r}
 rarecurve(t(otu_table(ps)), step=100, cex=0.5, ylab="ASVs", label=T)
@@ -261,11 +267,7 @@ is.binary.tree(phy_tree(ps))
 
 ```
 
-
-## Abundance plots
-
-
-### Check phyla from all samples
+### Check phyla using bar plots
 
 Check overall how the phyla are distributed among samples. Phyloseq makes this easy
 
@@ -289,8 +291,9 @@ Plot compositional (relative abundances) instead of absolute abundance using mic
 
 ```{r}
 ps_ra <- microbiome::transform(ps, transform = "compositional")
-head(otu_table(ps_ra))
+(otu_table(ps_ra))[1:10,1:10]
 ```
+
 
 ```{r}
 # Then aglomerate the ASVs at the phylum level using the phyloseq function, tax_glom
@@ -307,14 +310,14 @@ Division_barplot
 ggsave("Figures/Division_barplot.eps",Division_barplot, width = 15, height = 5, units = c("in"))
 ```
 
+Lots of dinoflagellates and radiolaria. Makes sense. But the above is the distribution from all samples. Next make plots that indicate distributions across environmental gradients. Calculate averages and use bubble plots
 
 
 
 
 
-
-### Prepare for bubble plots
-Average across sample replicates
+### Calculate averages from replicates
+Get average relative abundances from sample replicates
 ```{r}
 
 otu_table_mean_ra <- 
@@ -345,36 +348,46 @@ otu_table_mean_ra <-
 
 otu_table_mean_ra <- otu_table_mean_ra[,unique(metadata$Replicate)]
 
-#otu_table_mean_ra <- as_tibble(otu_table_mean_ra, rownames = "SampleID")
-
 otu_table_mean_ra
 ```
 
-Make into phyloseq object
+Make into new phyloseq object
 ```{r}
-ps_ra_mean <- phyloseq(otu_table(otu_table_mean_ra, taxa_are_rows = TRUE), TAX)
+metadata2 <- unique(select(metadata,!c('Sample Name',Type,colnames(SRARunTable))))
+META2 <- sample_data(data.frame(metadata2, row.names = metadata2$Replicate))
+
+ps_ra_mean <- phyloseq(otu_table(otu_table_mean_ra, taxa_are_rows = TRUE), TAX, TREE, META2)
 ```
 
-## CONTINUE HERE
 
 ```{r}
 # First aglomerate the ASVs at the phylum level using the phyloseq function, tax_glom
+ps_ra_mean_division <- tax_glom(ps_ra_mean, "Division")
 
-tax_glom(ps_ra_mean, "Division")
+
+# and check by bar plotting
+plot_bar(ps_ra_mean_division, x = "Sample", fill = "Division") + 
+  scale_fill_manual(values = DivisionPalette)
 ```
 
+## Bubble Plots
 
+### Prepare data
 
-Link taxonomy to mean RA table- COME BACK HERE AND USE GLOMMED DATA TO SEE PHYLA BUBBLE PLOTS ETC
+Extract mean relative abudnance, glommed by division, from the phyloseq object and pair it to taxonomic data
 ```{r}
-otu_table_mean_ra <- left_join(otu_table_mean_ra, as_tibble(taxonomy, rownames = "SampleID"))
+division_df <- data.frame(otu_table(ps_ra_mean_division))
+colnames(division_df) <- colnames(otu_table(ps_ra_mean_division))
+division_df$ASV <- rownames(division_df)
+
+otu_table_mean_ra <- left_join(division_df, as_tibble(taxonomy, rownames = "ASV"), by = "ASV")
 otu_table_mean_ra
 ```
 
 
 Pivot longer
 ```{r}
-otu_table_mean_ra <- pivot_longer(otu_table_mean_ra, cols = unique(metadata$Replicate), names_to = "Replicate")
+otu_table_mean_ra <- pivot_longer(otu_table_mean_ra, cols = unique(metadata$Replicate), names_to = "Replicate", values_to = "Mean_RA")
 otu_table_mean_ra
 ```
 
@@ -382,30 +395,44 @@ otu_table_mean_ra
 Join metadata 
 ```{r}
 otu_table_mean_ra <- left_join(otu_table_mean_ra, unique(select(metadata, c("Replicate", "Depth", "SizeFraction", "Season", "OxCond", "Fluorescence", "BeamAtt", "O2", "Temp", "Salinity", "H2S", "ParticulateS", "TZVS", "CH4", "NO3", "NO2", "NH4", "PO4", "Chemoautotrophy", "BNP", "MicroAbun(x10^8 L^-1)", "FlagAbun(x10^5 L-1)", "VLP(x10^8 L-1)"))), by = "Replicate")
+
+# Replace zeroes in RA with NA (better for plotting)
+otu_table_mean_ra$Mean_RA[otu_table_mean_ra$Mean_RA == 0] <- NA
+
+
 otu_table_mean_ra
 ```
 
 
-### Bubble plots- MODIFY
+### Plot
 
 ```{r}
-#C212A
-p1 = ggplot(otu_table_mean_ra,aes (x = Depth, y = fct_rev(as_factor(Taxonomy2))))+ # the fancy stuff around y (Taxonomy2) just helps to present it in reverse order in the plot (from top to btm alphabetically)
-  geom_point(aes(size = C212A))+
-  scale_x_discrete(limits=c("O1","O2","O3","A1","A2","E"))+
-  scale_size_area(breaks = c(0,.25,.5,.75,1), max_size = 6)+
-  xlab("")+
-  ylab("")+
-  labs(size="Relative Abundance")+
-  ggtitle("C212A")+
-  theme_bw()+
-  theme(axis.text.x = element_text(size=12),
-        axis.text.y = element_text(size=12),
-        axis.title.x= element_text(size=16),
-        axis.title.y= element_text(size=16))+
-  theme(legend.position="none")
+# reorder some factors to make them plot in the order I want
+otu_table_mean_ra$OxCond <- factor(otu_table_mean_ra$OxCond, levels = c("Oxycline", "ShallowAnoxic", "Euxinic"))
+otu_table_mean_ra$SizeFraction <- factor(otu_table_mean_ra$SizeFraction, levels = c("PA", "FL"))
+
+euk_divisions_bubbleplot_color <- ggplot(otu_table_mean_ra,aes (x = as.character(Depth), y = reorder(Division, Mean_RA, function(x){sum(x,na.rm = TRUE)}), color = OxCond)) + 
+  geom_point(aes(size =Mean_RA))+
+  facet_wrap(Season~SizeFraction, scales = "free_x", drop= TRUE, ncol = 4) +
+  scale_size(range = c(1,15)) +
+  scale_size_area(breaks = c(0,.25,.5,.75,1), max_size = 6) +
+  xlab("Depth") +
+  ylab("") +
+  labs(size="Relative Abundance", color = "Redox Condition") +
+   scale_color_manual(values = c("blue", "red", "brown4")) +
+  theme_bw() +
+  theme(axis.text.x = element_text(size=10),
+        axis.text.y = element_text(size=10),
+        axis.title.x= element_text(size=12),
+        axis.title.y= element_text(size=12))
+
+euk_divisions_bubbleplot_color
 ```
 
+Save plot
+```{r}
+ggsave(filename = "Figures/euk_divisions_bubbleplot_color.eps", plot = euk_divisions_bubbleplot_color, units = c("in"), width = 10, height = 6, dpi = 300)
+```
 
 
 
