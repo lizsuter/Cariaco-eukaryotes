@@ -35,6 +35,7 @@ library(SpiecEasi)
 library(otuSummary)
 library(psych)
 library(Matrix)
+library(igraph)
 
 
 # Helper functions from J. Cram https://biovcnet.github.io/_pages/NetworkScience_SparCC.nb
@@ -64,6 +65,13 @@ reorder_cor_and_p <- function(cormat, pmat){
   pmat <- pmat[hc$order, hc$order]
   list(r = cormat, p = pmat)
 }
+
+#Custom colorblind pallette, see: https://stackoverflow.com/questions/57153428/r-plot-color-combinations-that-are-colorblind-accessible
+customvermillion<-rgb(213/255,94/255,0/255)
+custombluegreen<-rgb(0/255,158/255,115/255)
+customblue<-rgb(0/255,114/255,178/255)
+customskyblue<-rgb(86/255,180/255,233/255)
+customreddishpurple<-rgb(204/255,121/255,167/255) 
 ```
 
 - Note for SpiecEasi, installation instructions are [here](https://github.com/zdk123/SpiecEasi). On Mac, there are issues with a dependency which I also had to update using these [instructions](https://thecoatlessprofessor.com/programming/cpp/r-compiler-tools-for-rcpp-on-macos/)
@@ -464,11 +472,21 @@ euk_divisions_bubbleplot_color <- ggplot(otu_table_mean_ra,aes (x = as.character
 euk_divisions_bubbleplot_color
 ```
 
-Save 
+Save figure
 ```{r}
 ggsave(filename = "Figures/euk_divisions_bubbleplot_color.eps", plot = euk_divisions_bubbleplot_color, units = c("in"), width = 10, height = 6, dpi = 300)
 ```
 
+
+#### Save and re-load dataset
+```{r}
+# save.image("EnvironmentBackups/CariacoEuks_postanalysis_vars_upto_bubbleplots.RData")
+```
+
+Re-load
+```{r}
+load("EnvironmentBackups/CariacoEuks_postanalysis_vars_upto_bubbleplots.RData")
+```
 
 
 # Correlation Analyses
@@ -546,7 +564,7 @@ ps_bac <- phyloseq(bac_OTU,	bac_TAX,	META)
 ps_arch <- phyloseq(arch_OTU,	arch_TAX,	META)
 ```
 
-Filter out the samples with low sequencing effort. These were previously identified in itags paper
+Filter out the samples with low sequencing effort. These were previously identified for itags paper
 
 ```{r}
 taxa_to_keep_b <- !sample_names(ps_bac) %in% c("AB3a900A","AB2a200A","AB2b267A")
@@ -557,9 +575,9 @@ ps_arch <- prune_samples(taxa_to_keep_a, ps_arch)
 ```
 
 
-### Agglomerate and remove OTUs with low abundance
+### Filtering
 
-First calculate relative abdunance
+First calculate relative abdunance of bac and arch OTU tables
 ```{r}
 ps_bac_ra <- microbiome::transform(ps_bac, transform = "compositional")
 (otu_table(ps_bac_ra))[1:5,1:5]
@@ -569,79 +587,40 @@ ps_arch_ra <- microbiome::transform(ps_arch, transform = "compositional")
 ```
 
 
-Agglomerate prokaryotic tables at a higher tax levl than species. Use a tax level that is recognizeable as a notable group. For bacteria, choose "taxonomy-4" (Order; gives enough resolution to pull out SAR406, SAR324, SAR11, Chromatiales, etc, without losing many of the important groups that have "NA" in tax-5 level). For archaea, choose taxonomy-3 (Class- gives enough resolution to differentiate MG I, II, Thermoplasmata, etc. without losing important taxa annotated as "uncultured" at tax-4 level).
-```{r}
-ps_bac_ra_orders = tax_glom(ps_bac_ra, "taxonomy-4")
-ps_arch_ra_classes = tax_glom(ps_arch_ra, "taxonomy-3")
-```
+### Filter low abundance species- full dataset
 
-
-And agglomerate the euk table at Order
-```{r}
-ps_euk_ra_orders = tax_glom(ps_ra, "Order")
-```
-
-Save and re-load (above 2 steps took a few minutes)
-```{r}
-# save.image("EnvironmentBackups/CariacoEuks_postanalysis_vars_upto_glom_of3domains.RData")
-```
-Re-load
-```{r}
-load("EnvironmentBackups/CariacoEuks_postanalysis_vars_upto_glom_of3domains.RData")
-```
-
-
-Remove rows of glommed taxa if their sum across all samples doesn't exceed 5% (RA > 0.05) 
+Remove rows of glommed taxa from the full dataframe if their sum across all samples doesn't exceed 5% (RA > 0.05) 
 ```{r}
 # Bacteria
-x <- taxa_sums(ps_bac_ra_orders)
+x <- taxa_sums(ps_bac_ra)
 # keepTaxa <-  base::which(x  > .05)
 keepTaxa <-  x>.05 # prune_taxa require a logical not a list of IDs. compare to keepTaxa above to check
-ps_bac_ra_pruned <-  prune_taxa(keepTaxa, ps_bac_ra_orders)
+ps_bac_ra_pruned <-  prune_taxa(keepTaxa, ps_bac_ra)
+ps_bac_pruned <-  prune_taxa(keepTaxa, ps_bac)
 ps_bac_ra_pruned
+ps_bac_pruned
 
 # Archaea
-x <- taxa_sums(ps_arch_ra_classes)
+x <- taxa_sums(ps_arch_ra)
 # keepTaxa <-  base::which(x  > .05)
 keepTaxa <-  x>.05 # prune_taxa require a logical not a list of IDs. compare to keepTaxa above to check
-ps_arch_ra_pruned <-  prune_taxa(keepTaxa, ps_arch_ra_classes)
+ps_arch_ra_pruned <-  prune_taxa(keepTaxa, ps_arch_ra)
+ps_arch_pruned <-  prune_taxa(keepTaxa, ps_arch)
 ps_arch_ra_pruned
+ps_arch_pruned
 
 # Eukaryotes
-x <- taxa_sums(ps_euk_ra_orders)
+x <- taxa_sums(ps_ra)
 # keepTaxa <-  base::which(x  > .05)
 keepTaxa <-  x>.05 # prune_taxa require a logical not a list of IDs. compare to keepTaxa above to check
-ps_euk_ra_pruned <-  prune_taxa(keepTaxa, ps_euk_ra_orders)
+ps_euk_ra_pruned <-  prune_taxa(keepTaxa, ps_ra)
+ps_euk_pruned <-  prune_taxa(keepTaxa, ps)
 ps_euk_ra_pruned
+ps_euk_pruned
 ```
-Trimmed to 75 bacteria OTUs, 7 archaea OTUs, and 28 eukaryotic ASVs (110 total). Proceed with this dataset of the most abundant OTUs for correlations and network analyses...
+Trimmed to 124 bacteria OTUs, 52 archaea OTUs, and 123 eukaryotic ASVs (299 total). Proceed with this dataset of the most abundant OTUs for correlations and network analyses...
 
-
-
-Make equivalent ps objects that have the same filtered dataset but retain the raw counts instead of the relative abundances (eg. an OTU table)
-```{r}
-alltaxa_bac <-  taxa_names(ps_bac)
-alltaxa_arch <-  taxa_names(ps_arch)
-alltaxa_euk <-  taxa_names(ps)
-
-remaintaxa_bac = taxa_names(ps_bac_ra_pruned)
-remaintaxa_arch = taxa_names(ps_arch_ra_pruned)
-remaintaxa_euk = taxa_names(ps_euk_ra_pruned)
-
-removetaxa_bac = alltaxa_bac[alltaxa_bac %in% remaintaxa_bac]
-removetaxa_arch = alltaxa_arch[alltaxa_arch %in% remaintaxa_arch]
-removetaxa_euk = alltaxa_euk[alltaxa_euk %in% remaintaxa_euk]
-
-
-ps_bac_pruned <- prune_taxa(removetaxa_bac,ps_bac)
-ps_arch_pruned <- prune_taxa(removetaxa_arch,ps_arch)
-ps_euk_pruned <- prune_taxa(removetaxa_euk,ps)
-```
-
-
-### Concatenate all domains into one table
-
-To do this I have to first match the sample names across domain datasets. These currently have "B" for bacteria, A, E etc. Remove this letter from sample names so that "AE2a247B", "AA2a247B", "AB2a247B" all become just "Type" from the metadata sheet [IntNov1FL in this case- for Interface, November, rep 1, free-living]. 
+To do the multi-domain analysis, the sample names from each phyloseq object must match. These currently have "B" for bacteria, A, E etc. Remove this letter from sample names so that "AE2a247B", "AA2a247B", "AB2a247B" all become just "Type" from the metadata sheet [IntNov1FL in this case- for Interface, November, rep 1, free-living]. 
 
 Import my SampleKey
 ```{r}
@@ -649,7 +628,7 @@ samplekey <- read_csv("SampleKey.csv")
 ```
 
 
-Change the sample names in the otu tables to "Type"
+Change the sample names in the otu tables to sample "Type"
 ```{r}
 # Archaea
 # remove missing archaea samples from samplekey_A
@@ -679,31 +658,30 @@ sample_names(ps_euk_pruned) <- samplekey_E$Type
 ```
 
 
-Move all pruned otu tables into one table by matching the samples names ("Type")
+Move all pruned otu tables into one table by matching the sample Type- will use this for SparCC
 ```{r}
 alldomains_df <- bind_rows(data.frame(otu_table(ps_bac_pruned)), data.frame(otu_table(ps_arch_pruned)), data.frame(otu_table(ps_euk_pruned)))
 alldomains_df
 ```
 
-Do some manual curating of the filtered OTU table to retain meaningful names
 Change row names from "denovoXXX" to meaningful names
 ```{r}
 alldomains_df_full <- cbind(ID = rownames(alldomains_df), alldomains_df)
 
-# start with only first 75 rows, which are bacteria. make one column of meaningful labels
-temp1 <- left_join(alldomains_df_full[1:75,], bac_taxonomy, by = c("ID" = "#OTU ID")) 
+# start with only first rows, which are bacteria. make one column of meaningful labels
+temp1 <- left_join(alldomains_df_full[1:dim(otu_table(ps_bac_pruned))[1],], bac_taxonomy, by = c("ID" = "#OTU ID")) 
 temp1$New_ID <- paste(temp1$ID, temp1$"taxonomy-2", temp1$"taxonomy-3", temp1$"taxonomy-4")
 temp1 <- select(temp1,-colnames(bac_taxonomy[,2:11]))
 
-# next 7 rows are the archaea 
-temp2 <- left_join(alldomains_df_full[76:82,], arch_taxonomy, by = c("ID" = "#OTU ID")) 
+# next rows are the archaea 
+temp2 <- left_join(alldomains_df_full[sum(dim(otu_table(ps_bac_pruned))[1],1):sum(dim(otu_table(ps_bac_pruned))[1],dim(otu_table(ps_arch_pruned))[1]),], arch_taxonomy, by = c("ID" = "#OTU ID")) 
 temp2$New_ID <- paste(temp2$ID, temp2$"taxonomy-2", temp2$"taxonomy-3")
 temp2 <- select(temp2,-colnames(arch_taxonomy[,2:9]))
 
 
-# last 28 rows are eukarya
+# last rows are eukarya
 euk_taxonomy <- cbind("#ASV ID" = rownames(taxonomy), taxonomy)
-temp3 <- left_join(alldomains_df_full[83:110,], euk_taxonomy, by = c("ID" = "#ASV ID")) 
+temp3 <- left_join(alldomains_df_full[sum(dim(otu_table(ps_arch_pruned))[1], dim(otu_table(ps_bac_pruned))[1],1):sum(dim(otu_table(ps_arch_pruned))[1], dim(otu_table(ps_bac_pruned))[1],dim(otu_table(ps_euk_pruned))[1]),], euk_taxonomy, by = c("ID" = "#ASV ID")) 
 temp3$New_ID <- paste(temp3$ID, temp3$"Supergroup", temp3$"Division", temp3$"Class", temp3$"Order")
 temp3 <- select(temp3,-colnames(euk_taxonomy[,2:9]))
 
@@ -717,21 +695,483 @@ alldomains_df_full <- select(alldomains_df_full, -c("ID","New_ID"))
 
 
 
-Remove columns with NAs. These are samples for which the library for at least one domain didn't work (can't do correlations with missing domains)
+Remove columns with NAs. These are samples for which the library for at least one domain didn't work (can't do correlations with missing values in columns)
 ```{r}
 alldomains_df_full <- alldomains_df_full %>%
     select_if(~ !any(is.na(.)))
 t(alldomains_df_full)[1:5,1:5]
+
+alldomains_df <- alldomains_df %>%
+    select_if(~ !any(is.na(.)))
+t(alldomains_df)[1:5,1:5]
 ```
 36 samples remain for correlation
 
 
+### Filter low abundance species- oxycline depths only
+Simlarly, make pruned datasets of the most abundant OTUs/ASVs in the oxycline, anoxic, and euxinic samples as separate datasets
+
+Pull out samples and taxa from each redox regime
+```{r}
+# Pull out oxycline bacteria sample IDs
+oxyclinetypes_bac <- metadata %>% 
+  filter(`Sample Name` %in% sample_names(ps_bac)) %>%
+  filter(OxCond == "Oxycline") %>% 
+  select("Sample Name")
+oxyclinetypes_bac <- unlist(c(unique(oxyclinetypes_bac)), use.names = FALSE)
+
+# Pull out all bacteria from oxycline
+ps_bac_oxycline <-  prune_samples(oxyclinetypes_bac, ps_bac)
+ps_bac_ra_oxycline <-  prune_samples(oxyclinetypes_bac, ps_bac_ra)
 
 
-## Correlations 
-### SparCC
+# Pull out oxycline archaea sample IDs
+oxyclinetypes_arch <- metadata %>% 
+  filter(`Sample Name` %in% sample_names(ps_arch)) %>%
+  filter(OxCond == "Oxycline") %>% 
+  select("Sample Name")
+oxyclinetypes_arch <- unlist(c(unique(oxyclinetypes_arch)), use.names = FALSE)
+
+# Pull out all archaea from oxycline
+ps_arch_oxycline <-  prune_samples(oxyclinetypes_arch, ps_arch)
+ps_arch_ra_oxycline <-  prune_samples(oxyclinetypes_arch, ps_arch_ra)
+
+
+# Pull out oxycline eukaryotic sample IDs
+oxyclinetypes_euk <- metadata %>% 
+  filter(`Sample Name` %in% sample_names(ps)) %>%
+  filter(OxCond == "Oxycline") %>% 
+  select("Sample Name")
+oxyclinetypes_euk <- unlist(c(unique(oxyclinetypes_euk)), use.names = FALSE)
+
+# Pull out all eukaryotes from oxycline
+ps_euk_oxycline <-  prune_samples(oxyclinetypes_euk, ps)
+ps_euk_ra_oxycline <-  prune_samples(oxyclinetypes_euk, ps_ra)
+
+```
+
+Filter out low abundance taxa from the oxycline samples. Use 5% as cutoff 
+```{r}
+# Bacteria
+x <- taxa_sums(ps_bac_ra_oxycline)
+keepTaxa <-  x>.05 # prune_taxa require a logical not a list of IDs. compare to keepTaxa above to check
+ps_bac_ra_oxycline_pruned <-  prune_taxa(keepTaxa, ps_bac_ra_oxycline)
+ps_bac_oxycline_pruned <-  prune_taxa(keepTaxa, ps_bac_oxycline)
+ps_bac_ra_oxycline_pruned
+ps_bac_oxycline_pruned
+
+# Archaea
+x <- taxa_sums(ps_arch_ra_oxycline)
+keepTaxa <-  x>.05 # prune_taxa require a logical not a list of IDs. compare to keepTaxa above to check
+ps_arch_ra_oxycline_pruned <-  prune_taxa(keepTaxa, ps_arch_ra_oxycline)
+ps_arch_oxycline_pruned <-  prune_taxa(keepTaxa, ps_arch_oxycline)
+ps_arch_ra_oxycline_pruned
+ps_arch_oxycline_pruned
+
+# Eukaryotes
+x <- taxa_sums(ps_euk_ra_oxycline)
+keepTaxa <-  x>.05 # prune_taxa require a logical not a list of IDs. compare to keepTaxa above to check
+ps_euk_ra_oxycline_pruned <-  prune_taxa(keepTaxa, ps_euk_ra_oxycline)
+ps_euk_oxycline_pruned <-  prune_taxa(keepTaxa, ps_euk_oxycline)
+ps_euk_ra_oxycline_pruned
+ps_euk_oxycline_pruned
+
+```
+79 bacteria, 36 archaea, 76 eukaryota remain
+
+
+Change the sample names in the otu tables to "Type"
+```{r}
+# Archaea
+# remove missing archaea samples from samplekey_A
+samplekey_A <- filter(samplekey, SampleID_arch  %in% colnames(otu_table(ps_arch_ra_oxycline_pruned)))
+# sort SampleKey by order of column names from ps_arch_ra_oxycline_pruned
+samplekey_A <- samplekey_A %>% arrange(factor(SampleID_arch, levels = colnames(otu_table(ps_arch_ra_oxycline_pruned))))
+# replace col names of otu table from ps_arch_ra_oxycline_pruned
+sample_names(ps_arch_ra_oxycline_pruned) <- samplekey_A$Type
+# and ps_arch_pruned
+sample_names(ps_arch_oxycline_pruned) <- samplekey_A$Type
+
+
+# Bacteria
+samplekey_B <- filter(samplekey, SampleID_bac  %in% colnames(otu_table(ps_bac_ra_oxycline_pruned)))
+samplekey_B <- samplekey_B %>% arrange(factor(SampleID_bac, levels = colnames(otu_table(ps_bac_ra_oxycline_pruned))))
+sample_names(ps_bac_ra_oxycline_pruned) <- samplekey_B$Type
+sample_names(ps_bac_oxycline_pruned) <- samplekey_B$Type
+
+
+# Eukaryotes
+samplekey_E <- filter(samplekey, SampleID_euk  %in% colnames(otu_table(ps_euk_ra_oxycline_pruned)))
+samplekey_E <- samplekey_E %>% arrange(factor(SampleID_euk, levels = colnames(otu_table(ps_euk_ra_oxycline_pruned))))
+sample_names(ps_euk_ra_oxycline_pruned) <- samplekey_E$Type
+sample_names(ps_euk_oxycline_pruned) <- samplekey_E$Type
+
+```
+
+Move all pruned otu tables into one table by matching the samples names ("Type")
+```{r}
+alldomains_df_oxycline <- bind_rows(data.frame(otu_table(ps_bac_oxycline_pruned)), data.frame(otu_table(ps_arch_oxycline_pruned)), data.frame(otu_table(ps_euk_oxycline_pruned)))
+alldomains_df_oxycline
+```
+
+Change row names from "denovoXXX" to meaningful names
+```{r}
+alldomains_df_full_oxycline <- cbind(ID = rownames(alldomains_df_oxycline), alldomains_df_oxycline)
+
+# start with only first 76 rows, which are bacteria. make one column of meaningful labels
+temp1 <- left_join(alldomains_df_full_oxycline[1:76,], bac_taxonomy, by = c("ID" = "#OTU ID")) 
+temp1$New_ID <- paste(temp1$ID, temp1$"taxonomy-2", temp1$"taxonomy-3", temp1$"taxonomy-4")
+temp1 <- select(temp1,-colnames(bac_taxonomy[,2:11]))
+
+# next 7 rows are the archaea 
+temp2 <- left_join(alldomains_df_full_oxycline[77:80,], arch_taxonomy, by = c("ID" = "#OTU ID")) 
+temp2$New_ID <- paste(temp2$ID, temp2$"taxonomy-2", temp2$"taxonomy-3")
+temp2 <- select(temp2,-colnames(arch_taxonomy[,2:9]))
+
+
+# last 28 rows are eukarya
+euk_taxonomy <- cbind("#ASV ID" = rownames(taxonomy), taxonomy)
+temp3 <- left_join(alldomains_df_full_oxycline[81:106,], euk_taxonomy, by = c("ID" = "#ASV ID")) 
+temp3$New_ID <- paste(temp3$ID, temp3$"Supergroup", temp3$"Division", temp3$"Class", temp3$"Order")
+temp3 <- select(temp3,-colnames(euk_taxonomy[,2:9]))
+
+# combine back all 3 domains, with new names as row names in a dataframe
+alldomains_df_full_oxycline <- rbind(temp1, temp2, temp3)
+alldomains_df_full_oxycline <- data.frame(alldomains_df_full_oxycline)
+rownames(alldomains_df_full_oxycline) <- alldomains_df_full_oxycline$New_ID
+alldomains_df_full_oxycline <- select(alldomains_df_full_oxycline, -c("ID","New_ID"))
+
+```
+
+
+
+Remove columns with NAs. These are samples for which the library for at least one domain didn't work (can't do correlations with missing domains)
+```{r}
+alldomains_df_full_oxycline <- alldomains_df_full_oxycline %>%
+    select_if(~ !any(is.na(.)))
+t(alldomains_df_full_oxycline)[1:5,1:5]
+```
+21 samples remain for correlation
+
+
+
+
+
+
+
+
+### Filter low abundance species- anoxic depths only
+
+Pull out samples from shallow anoxic regime
+```{r}
+# Pull out anoxic layer bacteria sample IDs
+anoxictypes_bac <- metadata %>% 
+  filter(`Sample Name` %in% sample_names(ps_bac_orders)) %>%
+  filter(OxCond == "ShallowAnoxic") %>% 
+  select("Sample Name")
+anoxictypes_bac <- unlist(c(unique(anoxictypes_bac)), use.names = FALSE)
+
+# Pull out all bacteria from anoxic layer
+ps_bac_anoxic <-  prune_samples(anoxictypes_bac, ps_bac_orders)
+ps_bac_ra_anoxic <-  prune_samples(anoxictypes_bac, ps_bac_ra_orders)
+
+
+# Pull out anoxic layer archaea sample IDs
+anoxictypes_arch <- metadata %>% 
+  filter(`Sample Name` %in% sample_names(ps_arch_classes)) %>%
+  filter(OxCond == "ShallowAnoxic") %>% 
+  select("Sample Name")
+anoxictypes_arch <- unlist(c(unique(anoxictypes_arch)), use.names = FALSE)
+
+# Pull out all archaea from anoxic layer
+ps_arch_anoxic<-  prune_samples(anoxictypes_arch, ps_arch_classes)
+ps_arch_ra_anoxic <-  prune_samples(anoxictypes_arch, ps_arch_ra_classes)
+
+
+# Pull out anoxic layer eukaryotic sample IDs
+anoxictypes_euk <- metadata %>% 
+  filter(`Sample Name` %in% sample_names(ps_euk_orders)) %>%
+  filter(OxCond == "ShallowAnoxic") %>% 
+  select("Sample Name")
+anoxictypes_euk <- unlist(c(unique(anoxictypes_euk)), use.names = FALSE)
+
+# Pull out all eukaryotes from anoxic layer
+ps_euk_anoxic <-  prune_samples(anoxictypes_euk, ps_euk_orders)
+ps_euk_ra_anoxic <-  prune_samples(anoxictypes_euk, ps_euk_ra_orders)
+
+```
+
+Filter out low abundance taxa from the oxycline samples. Use 1% as cutoff since this is a smaller dataset
+```{r}
+# Bacteria
+x <- taxa_sums(ps_bac_ra_anoxic)
+keepTaxa <-  x>.01 # prune_taxa require a logical not a list of IDs. compare to keepTaxa above to check
+ps_bac_ra_anoxic_pruned <-  prune_taxa(keepTaxa, ps_bac_ra_anoxic)
+ps_bac_anoxic_pruned <-  prune_taxa(keepTaxa, ps_bac_anoxic)
+ps_bac_ra_anoxic_pruned
+ps_bac_anoxic_pruned
+
+# Archaea
+x <- taxa_sums(ps_arch_ra_anoxic)
+keepTaxa <-  x>.01 # prune_taxa require a logical not a list of IDs. compare to keepTaxa above to check
+ps_arch_ra_anoxic_pruned <-  prune_taxa(keepTaxa, ps_arch_ra_anoxic)
+ps_arch_anoxic_pruned <-  prune_taxa(keepTaxa, ps_arch_anoxic)
+ps_arch_ra_anoxic_pruned
+ps_arch_anoxic_pruned
+
+# Eukaryotes
+x <- taxa_sums(ps_euk_ra_anoxic)
+keepTaxa <-  x>.01 # prune_taxa require a logical not a list of IDs. compare to keepTaxa above to check
+ps_euk_ra_anoxic_pruned <-  prune_taxa(keepTaxa, ps_euk_ra_anoxic)
+ps_euk_anoxic_pruned <-  prune_taxa(keepTaxa, ps_euk_anoxic)
+ps_euk_ra_anoxic_pruned
+ps_euk_anoxic_pruned
+
+```
+59 bacteria, 5 archaea, 31 eukaryota remain
+
+
+Change the sample names in the otu tables to "Type"
+```{r}
+# Archaea
+# remove missing archaea samples from samplekey_A
+samplekey_A <- filter(samplekey, SampleID_arch  %in% colnames(otu_table(ps_arch_ra_anoxic_pruned)))
+# sort SampleKey by order of column names from ps_arch_ra_anoxic_pruned
+samplekey_A <- samplekey_A %>% arrange(factor(SampleID_arch, levels = colnames(otu_table(ps_arch_ra_anoxic_pruned))))
+# replace col names of otu table from ps_arch_ra_anoxic_pruned
+sample_names(ps_arch_ra_anoxic_pruned) <- samplekey_A$Type
+# and ps_arch_pruned
+sample_names(ps_arch_anoxic_pruned) <- samplekey_A$Type
+
+
+# Bacteria
+samplekey_B <- filter(samplekey, SampleID_bac  %in% colnames(otu_table(ps_bac_ra_anoxic_pruned)))
+samplekey_B <- samplekey_B %>% arrange(factor(SampleID_bac, levels = colnames(otu_table(ps_bac_ra_anoxic_pruned))))
+sample_names(ps_bac_ra_anoxic_pruned) <- samplekey_B$Type
+sample_names(ps_bac_anoxic_pruned) <- samplekey_B$Type
+
+
+# Eukaryotes
+samplekey_E <- filter(samplekey, SampleID_euk  %in% colnames(otu_table(ps_euk_ra_anoxic_pruned)))
+samplekey_E <- samplekey_E %>% arrange(factor(SampleID_euk, levels = colnames(otu_table(ps_euk_ra_anoxic_pruned))))
+sample_names(ps_euk_ra_anoxic_pruned) <- samplekey_E$Type
+sample_names(ps_euk_anoxic_pruned) <- samplekey_E$Type
+
+```
+
+Move all pruned otu tables into one table by matching the samples names ("Type")
+```{r}
+alldomains_df_anoxic <- bind_rows(data.frame(otu_table(ps_bac_anoxic_pruned)), data.frame(otu_table(ps_arch_anoxic_pruned)), data.frame(otu_table(ps_euk_anoxic_pruned)))
+alldomains_df_anoxic
+```
+
+Change row names from "denovoXXX" to meaningful names
+```{r}
+alldomains_df_full_anoxic <- cbind(ID = rownames(alldomains_df_anoxic), alldomains_df_anoxic)
+
+# start with only first 76 rows, which are bacteria. make one column of meaningful labels
+temp1 <- left_join(alldomains_df_full_anoxic[1:59,], bac_taxonomy, by = c("ID" = "#OTU ID")) 
+temp1$New_ID <- paste(temp1$ID, temp1$"taxonomy-2", temp1$"taxonomy-3", temp1$"taxonomy-4")
+temp1 <- select(temp1,-colnames(bac_taxonomy[,2:11]))
+
+# next 7 rows are the archaea 
+temp2 <- left_join(alldomains_df_full_anoxic[60:64,], arch_taxonomy, by = c("ID" = "#OTU ID")) 
+temp2$New_ID <- paste(temp2$ID, temp2$"taxonomy-2", temp2$"taxonomy-3")
+temp2 <- select(temp2,-colnames(arch_taxonomy[,2:9]))
+
+
+# last 28 rows are eukarya
+euk_taxonomy <- cbind("#ASV ID" = rownames(taxonomy), taxonomy)
+temp3 <- left_join(alldomains_df_full_anoxic[65:95,], euk_taxonomy, by = c("ID" = "#ASV ID")) 
+temp3$New_ID <- paste(temp3$ID, temp3$"Supergroup", temp3$"Division", temp3$"Class", temp3$"Order")
+temp3 <- select(temp3,-colnames(euk_taxonomy[,2:9]))
+
+# combine back all 3 domains, with new names as row names in a dataframe
+alldomains_df_full_anoxic <- rbind(temp1, temp2, temp3)
+alldomains_df_full_anoxic <- data.frame(alldomains_df_full_anoxic)
+rownames(alldomains_df_full_anoxic) <- alldomains_df_full_anoxic$New_ID
+alldomains_df_full_anoxic <- select(alldomains_df_full_anoxic, -c("ID","New_ID"))
+
+```
+
+
+
+Remove columns with NAs. These are samples for which the library for at least one domain didn't work (can't do correlations with missing domains)
+```{r}
+alldomains_df_full_anoxic <- alldomains_df_full_anoxic %>%
+    select_if(~ !any(is.na(.)))
+t(alldomains_df_full_anoxic)[1:5,1:5]
+```
+11 samples remain for correlation
+
+
+
+
+
+
+
+
+### Filter low abundance species- euxinic depths only
+
+Pull out samples from shallow anoxic regime
+```{r}
+# Pull out anoxic layer bacteria sample IDs
+euxinictypes_bac <- metadata %>% 
+  filter(`Sample Name` %in% sample_names(ps_bac_orders)) %>%
+  filter(OxCond == "Euxinic") %>% 
+  select("Sample Name")
+euxinictypes_bac <- unlist(c(unique(euxinictypes_bac)), use.names = FALSE)
+
+# Pull out all bacteria from euxinic layer
+ps_bac_euxinic <-  prune_samples(euxinictypes_bac, ps_bac_orders)
+ps_bac_ra_euxinic <-  prune_samples(euxinictypes_bac, ps_bac_ra_orders)
+
+
+# Pull out euxinic layer archaea sample IDs
+euxinictypes_arch <- metadata %>% 
+  filter(`Sample Name` %in% sample_names(ps_arch_classes)) %>%
+  filter(OxCond == "Euxinic") %>% 
+  select("Sample Name")
+euxinictypes_arch <- unlist(c(unique(euxinictypes_arch)), use.names = FALSE)
+
+# Pull out all archaea from euxinic layer
+ps_arch_euxinic<-  prune_samples(euxinictypes_arch, ps_arch_classes)
+ps_arch_ra_euxinic <-  prune_samples(euxinictypes_arch, ps_arch_ra_classes)
+
+
+# Pull out euxinic layer eukaryotic sample IDs
+euxinictypes_euk <- metadata %>% 
+  filter(`Sample Name` %in% sample_names(ps_euk_orders)) %>%
+  filter(OxCond == "Euxinic") %>% 
+  select("Sample Name")
+euxinictypes_euk <- unlist(c(unique(euxinictypes_euk)), use.names = FALSE)
+
+# Pull out all eukaryotes from euxinic layer
+ps_euk_euxinic <-  prune_samples(euxinictypes_euk, ps_euk_orders)
+ps_euk_ra_euxinic <-  prune_samples(euxinictypes_euk, ps_euk_ra_orders)
+
+```
+
+Filter out low abundance taxa from the oxycline samples. Use 1% as cutoff since this is a smaller dataset
+```{r}
+# Bacteria
+x <- taxa_sums(ps_bac_ra_euxinic)
+keepTaxa <-  x>.01 # prune_taxa require a logical not a list of IDs. compare to keepTaxa above to check
+ps_bac_ra_euxinic_pruned <-  prune_taxa(keepTaxa, ps_bac_ra_euxinic)
+ps_bac_euxinic_pruned <-  prune_taxa(keepTaxa, ps_bac_euxinic)
+ps_bac_ra_euxinic_pruned
+ps_bac_euxinic_pruned
+
+# Archaea
+x <- taxa_sums(ps_arch_ra_euxinic)
+keepTaxa <-  x>.01 # prune_taxa require a logical not a list of IDs. compare to keepTaxa above to check
+ps_arch_ra_euxinic_pruned <-  prune_taxa(keepTaxa, ps_arch_ra_euxinic)
+ps_arch_euxinic_pruned <-  prune_taxa(keepTaxa, ps_arch_euxinic)
+ps_arch_ra_euxinic_pruned
+ps_arch_euxinic_pruned
+
+# Eukaryotes
+x <- taxa_sums(ps_euk_ra_euxinic)
+keepTaxa <-  x>.01 # prune_taxa require a logical not a list of IDs. compare to keepTaxa above to check
+ps_euk_ra_euxinic_pruned <-  prune_taxa(keepTaxa, ps_euk_ra_euxinic)
+ps_euk_euxinic_pruned <-  prune_taxa(keepTaxa, ps_euk_euxinic)
+ps_euk_ra_euxinic_pruned
+ps_euk_euxinic_pruned
+
+```
+55 bacteria, 11 archaea, 18 eukaryota remain
+
+
+Change the sample names in the otu tables to "Type"
+```{r}
+# Archaea
+# remove missing archaea samples from samplekey_A
+samplekey_A <- filter(samplekey, SampleID_arch  %in% colnames(otu_table(ps_arch_ra_euxinic_pruned)))
+# sort SampleKey by order of column names from ps_arch_ra_euxinic_pruned
+samplekey_A <- samplekey_A %>% arrange(factor(SampleID_arch, levels = colnames(otu_table(ps_arch_ra_euxinic_pruned))))
+# replace col names of otu table from ps_arch_ra_euxinic_pruned
+sample_names(ps_arch_ra_euxinic_pruned) <- samplekey_A$Type
+# and ps_arch_pruned
+sample_names(ps_arch_euxinic_pruned) <- samplekey_A$Type
+
+
+# Bacteria
+samplekey_B <- filter(samplekey, SampleID_bac  %in% colnames(otu_table(ps_bac_ra_euxinic_pruned)))
+samplekey_B <- samplekey_B %>% arrange(factor(SampleID_bac, levels = colnames(otu_table(ps_bac_ra_euxinic_pruned))))
+sample_names(ps_bac_ra_euxinic_pruned) <- samplekey_B$Type
+sample_names(ps_bac_euxinic_pruned) <- samplekey_B$Type
+
+
+# Eukaryotes
+samplekey_E <- filter(samplekey, SampleID_euk  %in% colnames(otu_table(ps_euk_ra_euxinic_pruned)))
+samplekey_E <- samplekey_E %>% arrange(factor(SampleID_euk, levels = colnames(otu_table(ps_euk_ra_euxinic_pruned))))
+sample_names(ps_euk_ra_euxinic_pruned) <- samplekey_E$Type
+sample_names(ps_euk_euxinic_pruned) <- samplekey_E$Type
+
+```
+
+Move all pruned otu tables into one table by matching the samples names ("Type")
+```{r}
+alldomains_df_euxinic <- bind_rows(data.frame(otu_table(ps_bac_euxinic_pruned)), data.frame(otu_table(ps_arch_euxinic_pruned)), data.frame(otu_table(ps_euk_euxinic_pruned)))
+alldomains_df_euxinic
+```
+
+Change row names from "denovoXXX" to meaningful names
+```{r}
+alldomains_df_full_euxinic <- cbind(ID = rownames(alldomains_df_euxinic), alldomains_df_euxinic)
+
+# start with only first 76 rows, which are bacteria. make one column of meaningful labels
+temp1 <- left_join(alldomains_df_full_euxinic[1:55,], bac_taxonomy, by = c("ID" = "#OTU ID")) 
+temp1$New_ID <- paste(temp1$ID, temp1$"taxonomy-2", temp1$"taxonomy-3", temp1$"taxonomy-4")
+temp1 <- select(temp1,-colnames(bac_taxonomy[,2:11]))
+
+# next 7 rows are the archaea 
+temp2 <- left_join(alldomains_df_full_euxinic[56:66,], arch_taxonomy, by = c("ID" = "#OTU ID")) 
+temp2$New_ID <- paste(temp2$ID, temp2$"taxonomy-2", temp2$"taxonomy-3")
+temp2 <- select(temp2,-colnames(arch_taxonomy[,2:9]))
+
+
+# last 28 rows are eukarya
+euk_taxonomy <- cbind("#ASV ID" = rownames(taxonomy), taxonomy)
+temp3 <- left_join(alldomains_df_full_euxinic[67:84,], euk_taxonomy, by = c("ID" = "#ASV ID")) 
+temp3$New_ID <- paste(temp3$ID, temp3$"Supergroup", temp3$"Division", temp3$"Class", temp3$"Order")
+temp3 <- select(temp3,-colnames(euk_taxonomy[,2:9]))
+
+# combine back all 3 domains, with new names as row names in a dataframe
+alldomains_df_full_euxinic <- rbind(temp1, temp2, temp3)
+alldomains_df_full_euxinic <- data.frame(alldomains_df_full_euxinic)
+rownames(alldomains_df_full_euxinic) <- alldomains_df_full_euxinic$New_ID
+alldomains_df_full_euxinic <- select(alldomains_df_full_euxinic, -c("ID","New_ID"))
+
+```
+
+
+
+Remove columns with NAs. These are samples for which the library for at least one domain didn't work (can't do correlations with missing domains)
+```{r}
+alldomains_df_full_euxinic <- alldomains_df_full_euxinic %>%
+    select_if(~ !any(is.na(.)))
+t(alldomains_df_full_euxinic)[1:4,1:4]
+```
+4 samples remain for correlation
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+## SparCC 
+### SparCC on full dataset
 This is largely based on [BVCN tutorials](https://github.com/biovcnet/biovcnet.github.io/wiki/TOPIC%3A-Networks)
-NOTE- input for SparCC should be raw count data (after filtering out low-abundance ASVs). The function does a log-ration transformation to account for compositionality
+NOTE- input for SparCC should be raw count data (after filtering out low-abundance ASVs). The function does a log-ratio transformation to account for compositionality
 
 ```{r}
 sparcctable_alldomains <- sparcc(t(alldomains_df))
@@ -744,7 +1184,7 @@ colnames(sparcctable_alldomains$Cor) <- rownames(alldomains_df_full)
 rownames(sparcctable_alldomains$Cov) <- rownames(alldomains_df_full)
 colnames(sparcctable_alldomains$Cov) <- rownames(alldomains_df_full)
 
-sparcctable_alldomains$Cor[1:5,1:5]
+sparcctable_alldomains$Cor[1:2,1:2]
 
 ```
 
@@ -757,19 +1197,75 @@ plotableSparcc <- sparcctable_alldomains$Cor %>% reorder_cormat %>% get_upper_tr
 Sparcc_plot <- plotableSparcc %>% ggplot(aes(x = Var2, y = Var1, fill = value)) + geom_tile() + scale_fill_gradient2() + theme(axis.text.x = element_text(angle = 90, hjust = 1))
 
 Sparcc_plot
-
-ggsave("figures/sparcc_corr_alldomains.eps",Sparcc_plot, width = 20, height = 20, units = c("in"))
-
 ```
 
 Calculate Sparcc p-values by bootstrapping- TAKES A LONG TIME
 ```{r}
-tp0 <- proc.time()
-out2 <- sparccboot(t(alldomains_df), R = 1000, ncpus = 2)
-tp1 <- proc.time()
-tp1 - tp0
+# tp0 <- proc.time()
+# out2 <- sparccboot(t(alldomains_df), R = 1000, ncpus = 2)
+# tp1 <- proc.time()
+# tp1 - tp0
 ```
 The above took <2 hours to run 1000 iterations
+
+
+
+Extract p-values 
+```{r}
+outP <- pval.sparccboot(out2)
+data.frame(outP$cors, outP$pvals) %>% head
+cors <- outP$cors
+pvals <- outP$pvals
+sparCCpcors <- diag(0.5, nrow = dim(sparcctable_alldomains$Cor)[1], ncol = dim(sparcctable_alldomains$Cor)[1])
+sparCCpcors[upper.tri(sparCCpcors, diag=FALSE)] <- cors
+sparCCpcors <- sparCCpcors + t(sparCCpcors)
+
+sparCCpval <- diag(0.5, nrow = dim(sparcctable_alldomains$Cor)[1], ncol = dim(sparcctable_alldomains$Cor)[1])
+sparCCpval[upper.tri(sparCCpval, diag=FALSE)] <- pvals
+sparCCpval <- sparCCpval + t(sparCCpval)
+
+rownames(sparCCpcors) <- rownames(alldomains_df_full)
+colnames(sparCCpcors) <- rownames(alldomains_df_full)
+rownames(sparCCpval) <- rownames(alldomains_df_full)
+colnames(sparCCpval) <- rownames(alldomains_df_full)
+
+sparCCpcors[1:2, 1:2]
+sparCCpval[1:2, 1:2]
+```
+
+Reorder for plotting
+```{r}
+reordered_all_sparcc <- reorder_cor_and_p(sparCCpcors, sparCCpval)
+reordered_sparccCor <- reordered_all_sparcc$r
+reordered_sparccP<- reordered_all_sparcc$p
+
+
+sparccCor_processed <- reordered_sparccCor  %>% get_upper_tri() %>% reshape2::melt() %>% na.omit() %>% rename(cor = value)
+sparccP_processed <- reordered_sparccP  %>% get_upper_tri() %>% reshape2::melt() %>% na.omit() %>% rename(p = value)
+
+# join the two data frames
+
+SparccP <- left_join(sparccCor_processed, sparccP_processed, by = c("Var1", "Var2")) %>%
+  # # remove self correlations
+  # filter(Var1 != Var2) %>% 
+  # calculate the false discovery rate to adjust for multiple p values
+  mutate(fdr = p.adjust(p, method = "BH"))
+```
+
+
+And plot correlation with p-values. Circles mean that the relationship is sig. at p = 0.05 level, based on bootstrapping
+```{r}
+fdrThresh <- 0.01 # fdr threshold
+sparccOkP <- SparccP%>% filter(fdr < fdrThresh) 
+
+SparccP_plot <- SparccP %>% ggplot(aes(x = Var2, y = Var1, fill = cor)) + geom_tile() + scale_fill_gradient2() + theme(axis.text.x = element_text(angle = 90, hjust = 1)) + geom_point(data = sparccOkP, shape = 1)
+
+SparccP_plot
+
+ggsave("figures/sparcc_corr_alldomains_w_pvals.eps",SparccP_plot, width = 20, height = 20, units = c("in"))
+
+```
+
 
 
 Save environment again
@@ -780,22 +1276,208 @@ Save environment again
 Or load if coming back
 ```{r}
 load("EnvironmentBackups/CariacoEuks_postanalysis_vars_upto_sparcc_bootstrap.RData")
+```
+
+
+
+
+
+
+## Graphical Lasso
+
+## TRY TO RUN DIRECTLY ON PHYLOSEQ OBJECT IN ORDER TO HELP WITH PLOTTING
+
+Try the glasso method, as described in the [spieceasi github](https://github.com/zdk123/SpiecEasi) and [BVCN lessons 1.2](https://biovcnet.github.io/_pages/NetworkScience_glasso). This reduces the clumps (eg. correlations that are secondary or teriary, not direct relationships)
+
+Make functions from tutorial
+```{r}
+convertSEToTable <- function(se_out,sp.names){
+  #This is just a fancy helper function to get the data in a comparable format to the output of lesson 1 so we can make a similar plot. We will cover other methods for visualizing this type of output in future lessons.
+  secor <- cov2cor(as.matrix(getOptCov(se_out))) # See spieceasi documentation for how to pull out weights for comparison
+  elist     <- summary(triu(secor*getRefit(se_out), k=1))
+  elist[,1] <- sp.names[elist[,1]]
+  elist[,2] <- sp.names[elist[,2]]
+  elist[,4] <- paste(elist[,1],elist[,2])
+  full_e <- expand.grid(sp.names,sp.names)
+  rownames(full_e) <- paste(full_e[,1],full_e[,2])
+  full_e[,"Weight"] <- 0
+  full_e[elist[,4],"Weight"] <- elist[,3]
+  x <- expand.grid(1:length(sp.names),1:length(sp.names))
+  full_e[x[,"Var1"]>x[,"Var2"],"Weight"] <- NA
+  return(as.data.frame(full_e,stringsAsFactors=F))
+}
+```
+
+### Glasso on full dataset
+Follow the spieceasi [documentation]() to find optimal parameters
+```{r}
+#Run Spieceasi
+pargs <- list(seed=10010)
+se <- spiec.easi(t(alldomains_df), method='glasso', lambda.min.ratio=5e-1,
+                          nlambda=100, pulsar.params=list(rep.num=50))
+getStability(se)
+```
+
+the above takes a couple of minutes to run
+
+```{r}
+#This is just a fancy helper function to get the data in a comparable format to the output of lesson 1 so we can make a similar plot. We will cover other methods for visualizing this type of output in future lessons.
+tab.se <- convertSEToTable(se,sp.names=colnames(t(alldomains_df_full))) 
+
+#Plot using ggplot as in lesson 1
+plot.se <- ggplot(tab.se,aes(x = Var1, y = Var2, fill = Weight)) + geom_tile() + scale_fill_gradient2() + theme(axis.text.x = element_text(angle = 90, hjust = 1))
+plot(plot.se)
+
+ggsave("figures/glasso_corr_alldomains.eps",plot.se, width = 20, height = 20, units = c("in"))
 
 ```
 
-## STOP HERE 6/10- next plot p-values and try glasso
-
-### Graphical Lasso
-Try the glasso method, as described in the [spieceasi github](https://github.com/zdk123/SpiecEasi) and [BVCN lessons 1.2](https://biovcnet.github.io/_pages/NetworkScience_glasso)
+Note- only the significant values above show up in the heatmap above (ie. there is no "p-value")
 
 
 
 
+## Network
+Build using igraph, following BVCN lesson 2.2
+
+```{r}
+#Extract adjacency matrix from spiecEasi output
+adj.mat <- getRefit(se)
+table(as.numeric(adj.mat))
+
+# Extract weighted adjacency
+se.cor  <- cov2cor(as.matrix(getOptCov(se)))
+weighted.adj.mat <- se.cor*getRefit(se)
+
+#Let's take a loot at that adjacency matrix
+heatmap(as.matrix(weighted.adj.mat))
+```
+
+Convert to graph objects
+```{r}
+grph.unweighted <- adj2igraph(adj.mat)
+grph <- adj2igraph(weighted.adj.mat)
+```
+
+Plot weighted graph
+```{r}
+plot(grph,vertex.size=1,
+     vertex.label=NA,
+     edge.width=1,
+     layout=layout.circle(grph))
+```
+
+Put back in species names
+```{r}
+V(grph)$name <- rownames(alldomains_df_full)
+V(grph)
+```
+
+Make size of nodes proportional to degree (number of connections)
+```{r}
+V(grph)$size <- (degree(grph) + 1) # the +1 is to avoid size zero vertices
+V(grph)$color <- "black"
+plot(grph,
+     vertex.label=NA,
+     layout=layout.circle(grph))
+```
+
+Color by connection (positive or negative) and changes width of edges to be proportional to their weights,
+Scale node sizes to be smaller
+```{r}
+E(grph)$color <- custombluegreen
+E(grph)$color[E(grph)$weight<0] <- customreddishpurple
+E(grph)$width <- abs(E(grph)$weight)*10
+V(grph)$size <- V(grph)$size/2
+plot(grph,
+     vertex.label=NA,
+     layout=layout.circle(grph))
+```
+
+Remove low-weight edges (you decide what threshold is right for your network):
+```{r}
+# weight_threshold <- 0.05
+# grph <- delete.edges(grph,which(abs(E(grph)$weight)<weight_threshold))
+# plot(grph,
+#      vertex.label=NA,
+#      layout=layout.circle(grph))
+```
+
+Plot only pos interactions, delete nodes that are not connected to anything
+```{r}
+#Remove negative edges 
+grph.pos <- delete.edges(grph,which(E(grph)$weight<0))
+grph.pos <- delete.vertices(grph.pos,which(degree(grph.pos)<1))
+plot(grph.pos,
+     vertex.label=NA)
+
+# Layout with fruchterman-reingold algorithm
+plot(grph.pos,
+     vertex.label=NA,
+     layout=layout_with_fr(grph.pos))
+```
+
+Check out remaining nodes and highlight interesting ones 
+```{r}
+positivenodes <- data.frame(name = V(grph.pos)$name)
+positivenodes
+
+# Change edge colors back to black
+E(grph.pos)$color <- "black"
+
+# # Color the Chromatiales (this is BS-GSO2 OTU) in red
+# V(grph.pos)$color[V(grph.pos)$name=="denovo231149 Proteobacteria Gammaproteobacteria Chromatiales"] <- customvermillion
+# #Find attached edges
+# e.Chroma <- E(grph.pos)[from("denovo231149 Proteobacteria Gammaproteobacteria Chromatiales")]
+# # And change the color of those highlighted edge
+# E(grph.pos)$color[E(grph.pos) %in% e.Chroma] <- customvermillion
+# 
+# 
+# # Color the syndiniales (only group V remaining)
+# V(grph.pos)$color[V(grph.pos)$name=="ASV_232 Alveolata Dinoflagellata Syndiniales Dino-Group-V"] <- custombluegreen
+# e.Synd <- E(grph.pos)[from("ASV_232 Alveolata Dinoflagellata Syndiniales Dino-Group-V")]
+# E(grph.pos)$color[E(grph.pos) %in% e.Synd] <- custombluegreen
+# 
+# 
+# # Color the Cariacotrichea
+# V(grph.pos)$color[V(grph.pos)$name=="ASV_196 Alveolata Ciliophora Cariacotrichea Cariacotrichea_X"] <- customblue
+# e.Cariacotrich <- E(grph.pos)[from("ASV_196 Alveolata Ciliophora Cariacotrichea Cariacotrichea_X")]
+# E(grph.pos)$color[E(grph.pos) %in% e.Cariacotrich] <- customblue
+
+# Color Marine Group A (SAR406)
+V(grph.pos)$color[V(grph.pos)$name=="denovo348086 Deferribacteres Deferribacterales SAR406_clade(Marine_group_A)"] <- customskyblue
+e.Cariacotrich <- E(grph.pos)[from("denovo348086 Deferribacteres Deferribacterales SAR406_clade(Marine_group_A)")]
+E(grph.pos)$color[E(grph.pos) %in% e.Cariacotrich] <- customskyblue
+
+# Color Marine Group B (SAR324)
+V(grph.pos)$color[V(grph.pos)$name=="denovo340 Proteobacteria Deltaproteobacteria SAR324_clade(Marine_group_B)"] <- customreddishpurple
+e.Cariacotrich <- E(grph.pos)[from("denovo340 Proteobacteria Deltaproteobacteria SAR324_clade(Marine_group_B)")]
+E(grph.pos)$color[E(grph.pos) %in% e.Cariacotrich] <- customreddishpurple
+
+#Plot
+plot(grph.pos,vertex.label=NA)
+title("Positive Correlation Network")
+legend("topright",bty = "n",
+       legend=c("BS-GSO2","Syndiniales Dino-Group-V", "Cariacotrichea", "Marine Group A", "Marine Group B"),
+       fill=c(customvermillion,custombluegreen,customblue,customskyblue,customreddishpurple), border=NA)
 
 
+```
 
 
-# ALL BELOW IS FROM ANOTHER NOTEBOOK. NEEDS MODIFICATION
+Plot only neg interactions
+```{r}
+#Remove negative edges 
+grph.neg <- delete.edges(grph,which(E(grph)$weight>0))
+grph.neg <- delete.vertices(grph.neg,which(degree(grph.neg)<1))
+plot(grph.neg,
+     vertex.label=NA)
+
+# Layout with fruchterman-reingold algorithm
+plot(grph.neg,
+     vertex.label=NA,
+     layout=layout_with_fr(grph.neg))
+```
 
 ## Ordinations 
 
