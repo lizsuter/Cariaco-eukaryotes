@@ -25,6 +25,7 @@ library(otuSummary)
 library(psych)
 library(Matrix)
 library(igraph)
+library(plotly)
 
 
 # Helper functions from J. Cram https://biovcnet.github.io/_pages/NetworkScience_SparCC.nb
@@ -61,6 +62,9 @@ custombluegreen<-rgb(0/255,158/255,115/255)
 customblue<-rgb(0/255,114/255,178/255)
 customskyblue<-rgb(86/255,180/255,233/255)
 customreddishpurple<-rgb(204/255,121/255,167/255) 
+
+# Report versions of packages
+sessionInfo()
 ```
 
 - Note for SpiecEasi, installation instructions are [here](https://github.com/zdk123/SpiecEasi). On Mac, there are issues with a dependency which I also had to update using these [instructions](https://thecoatlessprofessor.com/programming/cpp/r-compiler-tools-for-rcpp-on-macos/)
@@ -806,37 +810,41 @@ alldomains_df_oxycline
 
 Change row names from "denovoXXX" to meaningful names
 ```{r}
-alldomains_df_oxycline <- cbind(ID = rownames(alldomains_df_oxycline), alldomains_df_oxycline)
+alldomains_df_full_oxycline <- cbind(ID = rownames(alldomains_df_oxycline), alldomains_df_oxycline)
 
 # start with only first rows, which are bacteria. make one column of meaningful labels
-temp1 <- left_join(alldomains_df_oxycline[1:dim(otu_table(ps_bac_oxycline_pruned))[1],], bac_taxonomy, by = c("ID" = "#OTU ID")) 
+temp1 <- left_join(alldomains_df_full_oxycline[1:dim(otu_table(ps_bac_oxycline_pruned))[1],], bac_taxonomy, by = c("ID" = "#OTU ID")) 
 temp1$New_ID <- paste(temp1$ID, temp1$"taxonomy-2", temp1$"taxonomy-3", temp1$"taxonomy-4")
 temp1 <- select(temp1,-colnames(bac_taxonomy[,2:11]))
 
 # next rows are the archaea 
-temp2 <- left_join(alldomains_df_oxycline[sum(dim(otu_table(ps_bac_oxycline_pruned))[1],1):sum(dim(otu_table(ps_bac_oxycline_pruned))[1],dim(otu_table(ps_arch_oxycline_pruned))[1]),], arch_taxonomy, by = c("ID" = "#OTU ID")) 
+temp2 <- left_join(alldomains_df_full_oxycline[sum(dim(otu_table(ps_bac_oxycline_pruned))[1],1):sum(dim(otu_table(ps_bac_oxycline_pruned))[1],dim(otu_table(ps_arch_oxycline_pruned))[1]),], arch_taxonomy, by = c("ID" = "#OTU ID")) 
 temp2$New_ID <- paste(temp2$ID, temp2$"taxonomy-2", temp2$"taxonomy-3")
 temp2 <- select(temp2,-colnames(arch_taxonomy[,2:9]))
 
 
 # last rows are eukarya
 euk_taxonomy <- cbind("#ASV ID" = rownames(taxonomy), taxonomy)
-temp3 <- left_join(alldomains_df_oxycline[sum(dim(otu_table(ps_arch_oxycline_pruned))[1], dim(otu_table(ps_bac_oxycline_pruned))[1],1):sum(dim(otu_table(ps_arch_oxycline_pruned))[1], dim(otu_table(ps_bac_oxycline_pruned))[1],dim(otu_table(ps_euk_oxycline_pruned))[1]),], euk_taxonomy, by = c("ID" = "#ASV ID")) 
+temp3 <- left_join(alldomains_df_full_oxycline[sum(dim(otu_table(ps_arch_oxycline_pruned))[1], dim(otu_table(ps_bac_oxycline_pruned))[1],1):sum(dim(otu_table(ps_arch_oxycline_pruned))[1], dim(otu_table(ps_bac_oxycline_pruned))[1],dim(otu_table(ps_euk_oxycline_pruned))[1]),], euk_taxonomy, by = c("ID" = "#ASV ID")) 
 temp3$New_ID <- paste(temp3$ID, temp3$"Supergroup", temp3$"Division", temp3$"Class", temp3$"Order")
 temp3 <- select(temp3,-colnames(euk_taxonomy[,2:9]))
 
 # combine back all 3 domains, with new names as row names in a dataframe
-alldomains_df_oxycline <- rbind(temp1, temp2, temp3)
-alldomains_df_oxycline <- data.frame(alldomains_df_oxycline)
-rownames(alldomains_df_oxycline) <- alldomains_df_oxycline$New_ID
-alldomains_df_oxycline <- select(alldomains_df_oxycline, -c("ID","New_ID"))
-alldomains_df_oxycline
+alldomains_df_full_oxycline <- rbind(temp1, temp2, temp3)
+alldomains_df_full_oxycline <- data.frame(alldomains_df_full_oxycline)
+rownames(alldomains_df_full_oxycline) <- alldomains_df_full_oxycline$New_ID
+alldomains_df_full_oxycline <- select(alldomains_df_full_oxycline, -c("ID","New_ID"))
+alldomains_df_full_oxycline
 ```
 
 
 
 Remove columns with NAs. These are samples for which the library for at least one domain didn't work (can't do correlations with missing values in columns)
 ```{r}
+alldomains_df_full_oxycline <- alldomains_df_full_oxycline %>%
+    select_if(~ !any(is.na(.)))
+alldomains_df_full_oxycline
+
 alldomains_df_oxycline <- alldomains_df_oxycline %>%
     select_if(~ !any(is.na(.)))
 alldomains_df_oxycline
@@ -958,37 +966,41 @@ alldomains_df_anoxic
 
 Change row names from "denovoXXX" to meaningful names
 ```{r}
-alldomains_df_anoxic <- cbind(ID = rownames(alldomains_df_anoxic), alldomains_df_anoxic)
+alldomains_df_full_anoxic <- cbind(ID = rownames(alldomains_df_anoxic), alldomains_df_anoxic)
 
 # start with only first rows, which are bacteria. make one column of meaningful labels
-temp1 <- left_join(alldomains_df_anoxic[1:dim(otu_table(ps_bac_anoxic_pruned))[1],], bac_taxonomy, by = c("ID" = "#OTU ID")) 
+temp1 <- left_join(alldomains_df_full_anoxic[1:dim(otu_table(ps_bac_anoxic_pruned))[1],], bac_taxonomy, by = c("ID" = "#OTU ID")) 
 temp1$New_ID <- paste(temp1$ID, temp1$"taxonomy-2", temp1$"taxonomy-3", temp1$"taxonomy-4")
 temp1 <- select(temp1,-colnames(bac_taxonomy[,2:11]))
 
 # next rows are the archaea 
-temp2 <- left_join(alldomains_df_anoxic[sum(dim(otu_table(ps_bac_anoxic_pruned))[1],1):sum(dim(otu_table(ps_bac_anoxic_pruned))[1],dim(otu_table(ps_arch_anoxic_pruned))[1]),], arch_taxonomy, by = c("ID" = "#OTU ID")) 
+temp2 <- left_join(alldomains_df_full_anoxic[sum(dim(otu_table(ps_bac_anoxic_pruned))[1],1):sum(dim(otu_table(ps_bac_anoxic_pruned))[1],dim(otu_table(ps_arch_anoxic_pruned))[1]),], arch_taxonomy, by = c("ID" = "#OTU ID")) 
 temp2$New_ID <- paste(temp2$ID, temp2$"taxonomy-2", temp2$"taxonomy-3")
 temp2 <- select(temp2,-colnames(arch_taxonomy[,2:9]))
 
 
 # last rows are eukarya
 euk_taxonomy <- cbind("#ASV ID" = rownames(taxonomy), taxonomy)
-temp3 <- left_join(alldomains_df_anoxic[sum(dim(otu_table(ps_arch_anoxic_pruned))[1], dim(otu_table(ps_bac_anoxic_pruned))[1],1):sum(dim(otu_table(ps_arch_anoxic_pruned))[1], dim(otu_table(ps_bac_anoxic_pruned))[1],dim(otu_table(ps_euk_anoxic_pruned))[1]),], euk_taxonomy, by = c("ID" = "#ASV ID")) 
+temp3 <- left_join(alldomains_df_full_anoxic[sum(dim(otu_table(ps_arch_anoxic_pruned))[1], dim(otu_table(ps_bac_anoxic_pruned))[1],1):sum(dim(otu_table(ps_arch_anoxic_pruned))[1], dim(otu_table(ps_bac_anoxic_pruned))[1],dim(otu_table(ps_euk_anoxic_pruned))[1]),], euk_taxonomy, by = c("ID" = "#ASV ID")) 
 temp3$New_ID <- paste(temp3$ID, temp3$"Supergroup", temp3$"Division", temp3$"Class", temp3$"Order")
 temp3 <- select(temp3,-colnames(euk_taxonomy[,2:9]))
 
 # combine back all 3 domains, with new names as row names in a dataframe
-alldomains_df_anoxic <- rbind(temp1, temp2, temp3)
-alldomains_df_anoxic <- data.frame(alldomains_df_anoxic)
-rownames(alldomains_df_anoxic) <- alldomains_df_anoxic$New_ID
-alldomains_df_anoxic <- select(alldomains_df_anoxic, -c("ID","New_ID"))
-alldomains_df_anoxic
+alldomains_df_full_anoxic <- rbind(temp1, temp2, temp3)
+alldomains_df_full_anoxic <- data.frame(alldomains_df_full_anoxic)
+rownames(alldomains_df_full_anoxic) <- alldomains_df_full_anoxic$New_ID
+alldomains_df_full_anoxic <- select(alldomains_df_full_anoxic, -c("ID","New_ID"))
+alldomains_df_full_anoxic
 ```
 
 
 
 Remove columns with NAs. These are samples for which the library for at least one domain didn't work (can't do correlations with missing values in columns)
 ```{r}
+alldomains_df_full_anoxic <- alldomains_df_full_anoxic %>%
+    select_if(~ !any(is.na(.)))
+alldomains_df_full_anoxic
+
 alldomains_df_anoxic <- alldomains_df_anoxic %>%
     select_if(~ !any(is.na(.)))
 alldomains_df_anoxic
@@ -1107,37 +1119,41 @@ alldomains_df_euxinic
 
 Change row names from "denovoXXX" to meaningful names
 ```{r}
-alldomains_df_euxinic <- cbind(ID = rownames(alldomains_df_euxinic), alldomains_df_euxinic)
+alldomains_df_full_euxinic <- cbind(ID = rownames(alldomains_df_euxinic), alldomains_df_euxinic)
 
 # start with only first rows, which are bacteria. make one column of meaningful labels
-temp1 <- left_join(alldomains_df_euxinic[1:dim(otu_table(ps_bac_euxinic_pruned))[1],], bac_taxonomy, by = c("ID" = "#OTU ID")) 
+temp1 <- left_join(alldomains_df_full_euxinic[1:dim(otu_table(ps_bac_euxinic_pruned))[1],], bac_taxonomy, by = c("ID" = "#OTU ID")) 
 temp1$New_ID <- paste(temp1$ID, temp1$"taxonomy-2", temp1$"taxonomy-3", temp1$"taxonomy-4")
 temp1 <- select(temp1,-colnames(bac_taxonomy[,2:11]))
 
 # next rows are the archaea 
-temp2 <- left_join(alldomains_df_euxinic[sum(dim(otu_table(ps_bac_euxinic_pruned))[1],1):sum(dim(otu_table(ps_bac_euxinic_pruned))[1],dim(otu_table(ps_arch_euxinic_pruned))[1]),], arch_taxonomy, by = c("ID" = "#OTU ID")) 
+temp2 <- left_join(alldomains_df_full_euxinic[sum(dim(otu_table(ps_bac_euxinic_pruned))[1],1):sum(dim(otu_table(ps_bac_euxinic_pruned))[1],dim(otu_table(ps_arch_euxinic_pruned))[1]),], arch_taxonomy, by = c("ID" = "#OTU ID")) 
 temp2$New_ID <- paste(temp2$ID, temp2$"taxonomy-2", temp2$"taxonomy-3")
 temp2 <- select(temp2,-colnames(arch_taxonomy[,2:9]))
 
 
 # last rows are eukarya
 euk_taxonomy <- cbind("#ASV ID" = rownames(taxonomy), taxonomy)
-temp3 <- left_join(alldomains_df_euxinic[sum(dim(otu_table(ps_arch_euxinic_pruned))[1], dim(otu_table(ps_bac_euxinic_pruned))[1],1):sum(dim(otu_table(ps_arch_euxinic_pruned))[1], dim(otu_table(ps_bac_euxinic_pruned))[1],dim(otu_table(ps_euk_euxinic_pruned))[1]),], euk_taxonomy, by = c("ID" = "#ASV ID")) 
+temp3 <- left_join(alldomains_df_full_euxinic[sum(dim(otu_table(ps_arch_euxinic_pruned))[1], dim(otu_table(ps_bac_euxinic_pruned))[1],1):sum(dim(otu_table(ps_arch_euxinic_pruned))[1], dim(otu_table(ps_bac_euxinic_pruned))[1],dim(otu_table(ps_euk_euxinic_pruned))[1]),], euk_taxonomy, by = c("ID" = "#ASV ID")) 
 temp3$New_ID <- paste(temp3$ID, temp3$"Supergroup", temp3$"Division", temp3$"Class", temp3$"Order")
 temp3 <- select(temp3,-colnames(euk_taxonomy[,2:9]))
 
 # combine back all 3 domains, with new names as row names in a dataframe
-alldomains_df_euxinic <- rbind(temp1, temp2, temp3)
-alldomains_df_euxinic <- data.frame(alldomains_df_euxinic)
-rownames(alldomains_df_euxinic) <- alldomains_df_euxinic$New_ID
-alldomains_df_euxinic <- select(alldomains_df_euxinic, -c("ID","New_ID"))
-alldomains_df_euxinic
+alldomains_df_full_euxinic <- rbind(temp1, temp2, temp3)
+alldomains_df_full_euxinic <- data.frame(alldomains_df_full_euxinic)
+rownames(alldomains_df_full_euxinic) <- alldomains_df_full_euxinic$New_ID
+alldomains_df_full_euxinic <- select(alldomains_df_full_euxinic, -c("ID","New_ID"))
+alldomains_df_full_euxinic
 ```
 
 
 
 Remove columns with NAs. These are samples for which the library for at least one domain didn't work (can't do correlations with missing values in columns)
 ```{r}
+alldomains_df_full_euxinic <- alldomains_df_full_euxinic %>%
+    select_if(~ !any(is.na(.)))
+alldomains_df_full_euxinic
+
 alldomains_df_euxinic <- alldomains_df_euxinic %>%
     select_if(~ !any(is.na(.)))
 alldomains_df_euxinic
@@ -1290,7 +1306,7 @@ convertSEToTable <- function(se_out,sp.names){
 ```
 
 ### SpiecEasi on full dataset
-Follow the spieceasi [documentation](https://github.com/zdk123/SpiecEasi) to find optimal parameters
+Follow the spieceasi [documentation](https://github.com/zdk123/SpiecEasi) to find optimal parameters. Also, because I want to compare networks, this [convo](https://github.com/zdk123/SpiecEasi/issues/77) on using optimal parameters for different network comparisons is helpful.
 
 Remove samples from the phyloseq objects that are not in all 3 domains and reorder samples so they are in same order in all 3 objects
 ```{r}
@@ -1319,11 +1335,13 @@ sample_data(ps_euk_pruned)
 ```{r}
 #Run Spieceasi
 pargs <- list(seed=10010)
-se <- spiec.easi(list(ps_bac_pruned, ps_arch_pruned, ps_euk_pruned), method='glasso', lambda.min.ratio=5e-1,nlambda=100, pulsar.params=list(rep.num=50))
+se <- spiec.easi(list(ps_bac_pruned, ps_arch_pruned, ps_euk_pruned), method='glasso', lambda.min.ratio=1e-2, nlambda=100, pulsar.params=pargs)
 getStability(se)
 ```
 
-the above takes a couple of minutes to run
+the above takes a while to run (20-30 mins). Using parameters above, the stability along the lambda path crosses the 0.05 threshold and the final stability value (0.044) is sufficiently close to 0.05
+
+
 
 ```{r}
 #This is just a fancy helper function to get the data in a comparable format to the output of above
@@ -1362,18 +1380,16 @@ sample_data(ps_euk_oxycline_pruned)
 ```{r}
 #Run Spieceasi
 pargs <- list(seed=10010)
-se.oxycline <- spiec.easi(list(ps_bac_oxycline_pruned, ps_arch_oxycline_pruned, ps_euk_oxycline_pruned), method='glasso', lambda.min.ratio=5e-1,nlambda=100, pulsar.params=list(rep.num=50))
+se.oxycline <- spiec.easi(list(ps_bac_oxycline_pruned, ps_arch_oxycline_pruned, ps_euk_oxycline_pruned), method='glasso', lambda.min.ratio=5e-3, nlambda=300, pulsar.params=pargs)
 getStability(se.oxycline)
 ```
 
-the above takes a couple of minutes to run
+the above takes a couple of minutes to run. Stability and stability along lambda path are very similar to the full dataset spieceasi object (se) with these parameters above. Continue with these.
+
 
 ```{r}
-# Pull out spp names from oxcyline phyloseq objects and concatenate
-
-
 #This is just a fancy helper function to get the data in a comparable format to the output of above
-tab.se.oxycline <- convertSEToTable(se.oxycline, sp.names=colnames(t(alldomains_df_oxycline))) 
+tab.se.oxycline <- convertSEToTable(se.oxycline, sp.names=colnames(t(alldomains_df_full_oxycline))) 
 
 #Plot 
 plot.se.oxycline <- ggplot(tab.se.oxycline,aes(x = Var1, y = Var2, fill = Weight)) + geom_tile() + scale_fill_gradient2() + theme(axis.text.x = element_text(angle = 90, hjust = 1))
@@ -1409,18 +1425,19 @@ sample_data(ps_euk_anoxic_pruned)
 ```{r}
 #Run Spieceasi
 pargs <- list(seed=10010)
-se.anoxic <- spiec.easi(list(ps_bac_anoxic_pruned, ps_arch_anoxic_pruned, ps_euk_anoxic_pruned), method='glasso', lambda.min.ratio=5e-1,nlambda=100, pulsar.params=list(rep.num=50))
+se.anoxic <- spiec.easi(list(ps_bac_anoxic_pruned, ps_arch_anoxic_pruned, ps_euk_anoxic_pruned), method='glasso', lambda.min.ratio=1e-1, nlambda=300, pulsar.params=pargs)
 getStability(se.anoxic)
 ```
 
 the above takes a couple of minutes to run
 
+
+
+
+
 ```{r}
-# Pull out spp names from oxcyline phyloseq objects and concatenate
-
-
 #This is just a fancy helper function to get the data in a comparable format to the output of above
-tab.se.anoxic <- convertSEToTable(se.anoxic, sp.names=colnames(t(alldomains_df_anoxic))) 
+tab.se.anoxic <- convertSEToTable(se.anoxic, sp.names=colnames(t(alldomains_df_full_anoxic))) 
 
 #Plot 
 plot.se.anoxic <- ggplot(tab.se.anoxic,aes(x = Var1, y = Var2, fill = Weight)) + geom_tile() + scale_fill_gradient2() + theme(axis.text.x = element_text(angle = 90, hjust = 1))
@@ -1456,17 +1473,16 @@ sample_data(ps_euk_euxinic_pruned)
 ```{r}
 #Run Spieceasi
 pargs <- list(seed=10010)
-se.euxinic <- spiec.easi(list(ps_bac_euxinic_pruned, ps_arch_euxinic_pruned, ps_euk_euxinic_pruned), method='glasso', lambda.min.ratio=5e-2,nlambda=1000, pulsar.params=list(rep.num=50))
+se.euxinic <- spiec.easi(list(ps_bac_euxinic_pruned, ps_arch_euxinic_pruned, ps_euk_euxinic_pruned), method='glasso', lambda.min.ratio=1e-5,nlambda=20, pulsar.params=pargs)
 getStability(se.euxinic)
 ```
 
-I tried many parameters on the above but cannot get a satisfactory solution. There are just too few samples (4 after quality filtering) to do SpiecEasi on the euxinic depths only.
-
+I tried many parameters on the above but cannot get a satisfactory solution. There are just too few samples after quality filtering to do SpiecEasi on the euxinic depths only.
 
 
 ### Save and re-load environment
 ```{r}
-# save.image("EnvironmentBackups/CariacoEuks_postanalysis_vars_upto_spieceasi.RData")
+save.image("EnvironmentBackups/CariacoEuks_postanalysis_vars_upto_spieceasi.RData")
 ```
 
 Or load if coming back
@@ -1478,7 +1494,7 @@ load("EnvironmentBackups/CariacoEuks_postanalysis_vars_upto_spieceasi.RData")
 ## Network Analysis
 Build using igraph
 
-### 3 Domain Network- All depths
+### All depths and all domains
 ```{r}
 #Extract adjacency matrix from spiecEasi output
 adj.mat <- getRefit(se)
@@ -1558,7 +1574,7 @@ grph.oxycline <- adj2igraph(weighted.adj.mat)
 
 
 # Put back in species names
-V(grph.oxycline)$name <- rownames(alldomains_df_oxycline)
+V(grph.oxycline)$name <- rownames(alldomains_df_full_oxycline)
 # V(grph.oxycline)
 
 # Make size of nodes proportional to degree (number of connections)
@@ -1621,7 +1637,7 @@ grph.anoxic <- adj2igraph(weighted.adj.mat)
 
 
 # Put back in species names
-V(grph.anoxic)$name <- rownames(alldomains_df_oxycline)
+V(grph.anoxic)$name <- rownames(alldomains_df_full_oxycline)
 # V(grph.anoxic)
 
 # Make size of nodes proportional to degree (number of connections)
@@ -1668,12 +1684,83 @@ legend("topright",bty = "n",
 dev.off()
 ```
 
+### Collect network parameters
+
+#### Number of edges
+the number of edges and how many are positive vs negative
+```{r}
+# total number of edges in full dataset network
+length(E(grph)$weight)
+# percent of neg edges 
+(sum(E(grph)$weight<0)/length(E(grph)$weight))*100
+
+# total number of edges in oxycline network
+length(E(grph.oxycline)$weight)
+# percent of neg edges 
+(sum(E(grph.oxycline)$weight<0)/length(E(grph.oxycline)$weight))*100
+
+# total number of edges in oxycline network
+length(E(grph.anoxic)$weight)
+# percent of neg edges 
+(sum(E(grph.anoxic)$weight<0)/length(E(grph.anoxic)$weight))*100
+
+```
+
+Declining number of total edges going from full dataset --> oxycline only --> anoxic only. But the percentage of negative associations is similar (34.4-37.7%). Most associations (~65%) in each network are *positive*.
+
+#### Edge density
+the number of edges relatives to total number of possible edges
+```{r}
+edge_density(grph)
+edge_density(grph.oxycline)
+edge_density(grph.anoxic)
+```
+The full dataset has the highest edge density, then oxycline, then anoxic
+
+#### Component
+The size of the components, or "clumps," in the network, and how many members in each
+```{r}
+# full dataset
+components(grph)$no
+components(grph)$csize
+
+# oxycline
+components(grph.oxycline)$no
+components(grph.oxycline)$csize
+
+# anoxic
+components(grph.anoxic)$no
+components(grph.anoxic)$csize
+```
+
+The anoxic network is most disjointed, with 48 clumps and the largest containing only 24 members. The next is oxycline, with 32 clumps and the largest with 144 members. Then the full dataset has only 27 clumps and the largest clump contains 262 members.
 
 
 
-### Assemble a dataset of node-level measures from each network
+#### Average path length
+Path is the shortest distance between two nodes (fewest number of edges). Average path length of a network gives a sense of how connected every node is to another. Unconnected hubs in the netowrk will have "infinite" paths from other hubs. The function `mean_distance` ignores the infinite edges and calculates the average of all other edges
+```{r}
+mean_distance(grph)
+mean_distance(grph.oxycline)
+mean_distance(grph.anoxic)
+```
+The longest average path length is in the oxycline, followed by the whole dataset and then anoxic. Meaning the nodes in the anoxic are more closely associated with each other. Even though there are more hubs in anoxic, as shown above, the nodes in the hubs are close to each other. The oxycline hubs have the longest average distances between nodes.
 
-All depths
+
+
+
+
+
+### Analyze node-level measures from each network
+Calculate 4 parameters for each individual node:
+
+- degree (de) = number of edges connected to the node
+- strength (st) = sum of the weights of all the edges connected to the node
+- betweenness centrality (be) = the number of shortest paths (between all other nodes) that go through the node
+- closeness centrality (cc) = average distance (number of edges) of the node to any other node
+- local clustering coefficient (l.cluster) , aka transitivity = the propoortion of two nodes that are connected by a third node, of being connected to each other (eg. how many of a node's "friends" know each other?)
+
+All depth network- 
 ```{r}
 # First change the weights of the edges (the strength of association) to absolute value. This won't work if negative associations are left with negative signs
 E(grph)$weight <- abs(E(grph)$weight)
@@ -1682,10 +1769,13 @@ names=V(grph)$name
 de=degree(grph)
 st=graph.strength(grph)
 be=betweenness(grph, normalized=T)
+cc = closeness(grph)
+l.cluster=transitivity(grph, "local")
+
 
 
 # assemble dataset and match full taxonomy
-fulldateset_node_measures <- data.frame(ID=names, degree=de, strength=st, betweenness=be) 
+fulldateset_node_measures <- data.frame(ID=names, degree=de, strength=st, betweenness=be, closeness = cc, clustering_coefficient = l.cluster) 
 
 # Put back bac taxaonomy
 temp1 <- left_join(fulldateset_node_measures[1:dim(otu_table(ps_bac_pruned))[1],], bac_taxonomy, by = c("ID" = "#OTU ID")) 
@@ -1706,16 +1796,53 @@ fulldateset_node_measures <- rbind(temp1, temp2, temp3)
 fulldateset_node_measures
 ```
 
-Plot betweeness vs centrality (keystone species analysis)
+Plot betweeness vs degree for each node. 
+- Tipton et al. argue that nodes with high betweenness are "bottlenecks" or important connectors and nodes with high degree are "hubs"
+- Berry et al. argue that nodes with low betweenness, high degree, high closeness, and high transitivity are candidate keystone species
+  - Add in closeness into the node's plotly label since these don't vary much node-to-node and wouldn't make sense to plot
 ```{r}
-ggplot(fulldateset_node_measures, aes(x = degree, y = betweenness, color = fulldateset_node_measures$"taxonomy-2")) +
-  geom_point()
+# replace NA in taxonomy with unidentified 
+# remove nodes with 0 betweenness (can't calculate log10 of 0)
+# replace NaN clustering coefs with 0
+fulldateset_node_measures <- fulldateset_node_measures %>% 
+  replace(is.na(.), "unidentified") %>%
+  filter(!betweenness == 0) 
+
+# get enough colors and randomly rearrange so they are easier to separate on the plot
+mycolors <- colorRampPalette(brewer.pal(12, "Paired"))(length(unique(fulldateset_node_measures$`taxonomy-3`)))
+mycolors <-  sample(mycolors)
+
+# plot with plotly and so I can hover over points and determine which taxa they are
+p <- ggplot(fulldateset_node_measures, aes(x = degree, y = betweenness, ID = ID, shape = `taxonomy-1`, `taxonomy-2` = `taxonomy-2`, color = `taxonomy-3`, `taxonomy-4` = `taxonomy-4`, `taxonomy-5` = `taxonomy-5`)) +
+  geom_point(size = 5) +
+  scale_y_continuous(trans='log10') +
+  scale_color_manual(values = mycolors) +
+  theme_bw()
+ggplotly(p, tooltip = c("ID","taxonomy-2", "taxonomy-3", "taxonomy-4", "taxonomy-5"))
+
+```
+
+Plot node degree and transitivity (clustering coefficient)
+```{r}
+# plot with plotly and so I can hover over points and determine which taxa they are
+p <- ggplot(fulldateset_node_measures, aes(x = clustering_coefficient, y = betweenness, ID = ID, shape = `taxonomy-1`, `taxonomy-2` = `taxonomy-2`, color = `taxonomy-3`, `taxonomy-4` = `taxonomy-4`, `taxonomy-5` = `taxonomy-5`)) +
+  geom_point(size = 5) +
+  scale_color_manual(values = mycolors) +
+    scale_y_continuous(trans='log10') +
+  theme_bw()
+ggplotly(p, tooltip = c("ID","taxonomy-2", "taxonomy-3", "taxonomy-4", "taxonomy-5"))
+
 ```
 
 
-## STOPPED HERE. CONTINUE PLAYING WITH PLOT ABOVE. DO SAME FOR OXYCLINE AND ANOXIC ONLY (WILL NEED TO MAKE EDITS IN FILTERING ABOVE FOR CLEAR NAMES). THEN COLLECT OVERALL NETWORK PARAMETERS FOLLOWING: https://dshizuka.github.io/networkanalysis/04_measuring.html#betweenness
 
-### Collect network parameters
+
+## STOPPED HERE. CONTINUE PLAYING WITH PLOT ABOVE, highliting specific groups (Synd, Spumellaride, Alphas, Deferribac, etc). DO SAME FOR OXYCLINE AND ANOXIC ONLY (WILL NEED TO MAKE EDITS IN FILTERING ABOVE FOR CLEAR NAMES). CONTINUE TO COLLECT OVERALL NETWORK PARAMETERS FOLLOWING: https://dshizuka.github.io/networkanalysis/04_measuring.html#betweenness. REMOVE EUKS TO SEE HOW NETOWORKS CHANGE
+- report blast/ new SILVA results for 
+  - "No blast hit" denovo129797
+  - "AEGAN-245" from a metagenome denovo351910
+  
+  Figure out how to calculate closeness for only major hub, rather than whole 
 
 
 
