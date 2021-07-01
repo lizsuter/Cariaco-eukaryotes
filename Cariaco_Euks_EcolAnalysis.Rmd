@@ -409,8 +409,8 @@ plot_bar(ps_ra_mean_division, x = "Sample", fill = "Division") +
 
 # Abundance Plots
 
-## Prepare data
-
+## Division
+### Prepare data
 Extract mean relative abundance, glommed by division, from the phyloseq object and pair it to taxonomic data
 ```{r}
 division_df <- data.frame(otu_table(ps_ra_mean_division))
@@ -440,7 +440,7 @@ otu_table_mean_ra
 ```
 
 
-## Bubble Plot of Divisions
+### Bubble Plot of Divisions
 
 ```{r}
 # reorder some factors to make them plot in the order I want
@@ -652,14 +652,20 @@ sample_names(ps_euk_pruned) <- samplekey_E$Type
 
 
 Move all pruned otu tables into one table by matching the sample Type- will use this for SparCC
+Make one for the 3-domain analysis and one for the 2-domain analysis (bacteria and archaea only)
 ```{r}
 alldomains_df <- bind_rows(data.frame(otu_table(ps_bac_pruned)), data.frame(otu_table(ps_arch_pruned)), data.frame(otu_table(ps_euk_pruned)))
 alldomains_df
+
+twodomains_df <- bind_rows(data.frame(otu_table(ps_bac_pruned)), data.frame(otu_table(ps_arch_pruned)))
+twodomains_df
 ```
 
 Change row names from "denovoXXX" to meaningful names
 ```{r}
 alldomains_df_full <- cbind(ID = rownames(alldomains_df), alldomains_df)
+twodomains_df_full <- cbind(ID = rownames(twodomains_df), twodomains_df)
+
 
 # start with only first rows, which are bacteria. make one column of meaningful labels
 temp1 <- left_join(alldomains_df_full[1:dim(otu_table(ps_bac_pruned))[1],], bac_taxonomy, by = c("ID" = "#OTU ID")) 
@@ -684,6 +690,13 @@ alldomains_df_full <- data.frame(alldomains_df_full)
 rownames(alldomains_df_full) <- alldomains_df_full$New_ID
 alldomains_df_full <- select(alldomains_df_full, -c("ID","New_ID"))
 
+# and make one for the 2-domain dataset
+twodomains_df_full <- rbind(temp1, temp2)
+twodomains_df_full <- data.frame(twodomains_df_full)
+rownames(twodomains_df_full) <- twodomains_df_full$New_ID
+twodomains_df_full <- select(twodomains_df_full, -c("ID","New_ID"))
+
+
 ```
 
 
@@ -692,13 +705,21 @@ Remove columns with NAs. These are samples for which the library for at least on
 ```{r}
 alldomains_df_full <- alldomains_df_full %>%
     select_if(~ !any(is.na(.)))
-t(alldomains_df_full)[1:5,1:5]
+alldomains_df_full
 
 alldomains_df <- alldomains_df %>%
     select_if(~ !any(is.na(.)))
-t(alldomains_df)[1:5,1:5]
+alldomains_df
+
+twodomains_df_full <- twodomains_df_full %>%
+    select_if(~ !any(is.na(.)))
+twodomains_df_full
+
+twodomains_df <- twodomains_df %>%
+    select_if(~ !any(is.na(.)))
+twodomains_df
 ```
-36 samples remain for correlation
+
 
 
 ### Filter low abundance species- oxycline depths only
@@ -1313,21 +1334,21 @@ Remove samples from the phyloseq objects that are not in all 3 domains and reord
 bac_arch_common <- intersect(sample_names(ps_bac_ra_pruned), sample_names(ps_arch_ra_pruned))
 all_common <- intersect(bac_arch_common, sample_names(ps_euk_ra_pruned))
 
-ps_bac_pruned <- prune_samples(all_common, ps_bac_pruned)
-ps_arch_pruned <- prune_samples(all_common, ps_arch_pruned)
-ps_euk_pruned <- prune_samples(all_common, ps_euk_pruned)
+ps_bac_pruned_3domains <- prune_samples(all_common, ps_bac_pruned)
+ps_arch_pruned_3domains <- prune_samples(all_common, ps_arch_pruned)
+ps_euk_pruned_3domains <- prune_samples(all_common, ps_euk_pruned)
 
-ps_bac_ra_pruned <- prune_samples(all_common, ps_bac_ra_pruned)
-ps_arch_ra_pruned <- prune_samples(all_common, ps_arch_ra_pruned)
-ps_euk_ra_pruned <- prune_samples(all_common, ps_euk_ra_pruned)
+ps_bac_ra_pruned_3domains <- prune_samples(all_common, ps_bac_ra_pruned)
+ps_arch_ra_pruned_3domains <- prune_samples(all_common, ps_arch_ra_pruned)
+ps_euk_ra_pruned_3domains <- prune_samples(all_common, ps_euk_ra_pruned)
 
 
-otu_table(ps_arch_pruned) <- otu_table(ps_arch_pruned)[,sample_names(ps_bac_ra_pruned)]
-otu_table(ps_euk_pruned) <- otu_table(ps_euk_pruned)[,sample_names(ps_bac_ra_pruned)]
+otu_table(ps_arch_pruned_3domains) <- otu_table(ps_arch_pruned_3domains)[,sample_names(ps_bac_ra_pruned_3domains)]
+otu_table(ps_euk_pruned_3domains) <- otu_table(ps_euk_pruned_3domains)[,sample_names(ps_bac_ra_pruned_3domains)]
 
-sample_data(ps_bac_pruned)
-sample_data(ps_arch_pruned)
-sample_data(ps_euk_pruned)
+sample_data(ps_bac_pruned_3domains)
+sample_data(ps_arch_pruned_3domains)
+sample_data(ps_euk_pruned_3domains)
 ```
 
 
@@ -1335,7 +1356,7 @@ sample_data(ps_euk_pruned)
 ```{r}
 #Run Spieceasi
 pargs <- list(seed=10010)
-se <- spiec.easi(list(ps_bac_pruned, ps_arch_pruned, ps_euk_pruned), method='glasso', lambda.min.ratio=1e-2, nlambda=100, pulsar.params=pargs)
+se <- spiec.easi(list(ps_bac_pruned_3domains, ps_arch_pruned_3domains, ps_euk_pruned_3domains), method='glasso', lambda.min.ratio=1e-2, nlambda=100, pulsar.params=pargs)
 getStability(se)
 ```
 
@@ -1356,7 +1377,56 @@ ggsave("figures/spieceasi_alldomains.eps",plot.se, width = 35, height = 35, unit
 ```
 Note- only the significant values above show up in the heatmap above (ie. there is no "p-value")
 
-### SpiecEasi on oxycline depths
+
+
+### SpiecEasi on bacteria and archaea only
+Remove samples from the phyloseq objects that are not in both domains and reorder samples so they are in same order in all 3 objects
+```{r}
+bac_arch_common <- intersect(sample_names(ps_bac_ra_pruned), sample_names(ps_arch_ra_pruned))
+
+ps_bac_pruned_2domains <- prune_samples(bac_arch_common, ps_bac_pruned)
+ps_arch_pruned_2domains <- prune_samples(bac_arch_common, ps_arch_pruned)
+
+ps_bac_ra_pruned_2domains <- prune_samples(bac_arch_common, ps_bac_ra_pruned)
+ps_arch_ra_pruned_2domains <- prune_samples(bac_arch_common, ps_arch_ra_pruned)
+
+
+otu_table(ps_arch_pruned_2domains) <- otu_table(ps_arch_pruned_2domains)[,sample_names(ps_bac_ra_pruned_3domains)]
+
+sample_data(ps_bac_pruned_2domains)
+sample_data(ps_arch_pruned_2domains)
+```
+
+
+
+```{r}
+#Run Spieceasi
+pargs <- list(seed=10010)
+se.2domains <- spiec.easi(list(ps_bac_pruned_2domains, ps_arch_pruned_2domains), method='glasso', lambda.min.ratio=1e-2, nlambda=200, pulsar.params=pargs)
+getStability(se.2domains)
+```
+
+the above takes a while to run . Using parameters above, the stability along the lambda path crosses the 0.05 threshold and the final stability value (0.046) is close to 0.05
+
+
+
+```{r}
+#This is just a fancy helper function to get the data in a comparable format to the output of above
+tab.se <- convertSEToTable(se.2domains,sp.names=colnames(t(twodomains_df_full))) 
+
+#Plot 
+plot.se <- ggplot(tab.se,aes(x = Var1, y = Var2, fill = Weight)) + geom_tile() + scale_fill_gradient2() + theme(axis.text.x = element_text(angle = 90, hjust = 1))
+plot(plot.se)
+
+ggsave("figures/spieceasi_2domains.eps",plot.se, width = 35, height = 35, units = c("in"))
+
+```
+Note- only the significant values above show up in the heatmap above (ie. there is no "p-value")
+
+
+
+
+### SpiecEasi on oxycline  with 3 domains
 
 ```{r}
 bac_arch_common <- intersect(sample_names(ps_bac_oxycline_pruned), sample_names(ps_arch_oxycline_pruned))
@@ -1401,7 +1471,7 @@ ggsave("figures/spieceasi_alldomains_oxycline.eps",plot.se.oxycline, width = 35,
 
 
 
-### SpiecEasi on anoxic depths
+### SpiecEasi on anoxic depths with 3 domains
 
 ```{r}
 bac_arch_common <- intersect(sample_names(ps_bac_anoxic_pruned), sample_names(ps_arch_anoxic_pruned))
@@ -1449,7 +1519,7 @@ ggsave("figures/spieceasi_alldomains_anoxic.eps",plot.se.anoxic, width = 35, hei
 
 
 
-### SpiecEasi on euxinic depths
+### SpiecEasi on euxinic depths with 3 domains
 
 ```{r}
 bac_arch_common <- intersect(sample_names(ps_bac_euxinic_pruned), sample_names(ps_arch_euxinic_pruned))
@@ -1482,7 +1552,7 @@ I tried many parameters on the above but cannot get a satisfactory solution. The
 
 ### Save and re-load environment
 ```{r}
-save.image("EnvironmentBackups/CariacoEuks_postanalysis_vars_upto_spieceasi.RData")
+# save.image("EnvironmentBackups/CariacoEuks_postanalysis_vars_upto_spieceasi.RData")
 ```
 
 Or load if coming back
@@ -1492,9 +1562,9 @@ load("EnvironmentBackups/CariacoEuks_postanalysis_vars_upto_spieceasi.RData")
 
 
 ## Network Analysis
-Build using igraph
+Build networks from the SpiecEasi association matrices using iGraph
 
-### All depths and all domains
+### 3 Domain Network- All depths
 ```{r}
 #Extract adjacency matrix from spiecEasi output
 adj.mat <- getRefit(se)
@@ -1531,7 +1601,7 @@ V(grph)$size <- V(grph)$size/2
 # grph <- delete.edges(grph,which(abs(E(grph)$weight)<weight_threshold))
 
 # Color nodes by domain
-dtype <- c(rep("red",ntaxa(ps_bac_pruned)), rep("green",ntaxa(ps_arch_pruned)), rep("blue",ntaxa(ps_euk_pruned)))
+dtype <- c(rep("red",ntaxa(ps_bac_pruned_3domains)), rep("green",ntaxa(ps_arch_pruned_3domains)), rep("blue",ntaxa(ps_euk_pruned_3domains)))
 
 # Plot
 plot(grph,
@@ -1558,6 +1628,70 @@ dev.off()
 ```
 
 
+### 2 Domain Network- All depths
+```{r}
+#Extract adjacency matrix from spiecEasi output
+adj.mat <- getRefit(se.2domains)
+table(as.numeric(adj.mat))
+
+# Extract weighted adjacency
+se.cor  <- cov2cor(as.matrix(getOptCov(se.2domains)))
+weighted.adj.mat <- se.cor*getRefit(se.2domains)
+
+#Convert to graph objects
+grph.unweighted <- adj2igraph(adj.mat)
+grph.2domains <- adj2igraph(weighted.adj.mat)
+
+
+# Put back in species names
+V(grph.2domains)$name <- rownames(twodomains_df)
+# V(grph.2domains)
+
+# Make size of nodes proportional to degree (number of connections)
+V(grph.2domains)$size <- (degree(grph.2domains) + 1) # the +1 avoids size zero vertices
+
+# Color edges by connection (positive or negative) 
+# E(grph.2domains)$color <- custombluegreen
+# E(grph.2domains)$color[E(grph.2domains)$weight<0] <- customreddishpurple
+
+# Change width of edges to be proportional to their weights
+E(grph.2domains)$width <- abs(E(grph.2domains)$weight)*10
+
+# Scale node sizes to be smaller
+V(grph.2domains)$size <- V(grph.2domains)$size/2
+
+# Remove low-weight edges (you decide what threshold is right for your network):
+# weight_threshold <- 0.07
+# grph.2domains <- delete.edges(grph.2domains,which(abs(E(grph.2domains)$weight)<weight_threshold))
+
+# Color nodes by domain
+dtype <- c(rep("red",ntaxa(ps_bac_pruned_2domains)), rep("green",ntaxa(ps_arch_pruned_2domains)))
+
+# Plot
+plot(grph.2domains,
+     vertex.label=NA,
+     layout=layout_with_graphopt(grph.2domains),
+     vertex.color=dtype)
+title("SpiecEasi Network: Bacteria and Archaea, Whole Water Column")
+legend("topright",bty = "n",
+       legend=c("Bacteria","Archaea"),
+       fill=c("red","green"), border=NA)
+
+# Save plot
+setEPS()
+postscript(file = "Figures/2domains_alldepths_spieceasi_network.eps", width = 5.5, height = 5)
+plot(grph.2domains,
+     vertex.label=NA,
+     layout=layout_with_graphopt(grph.2domains),
+     vertex.color=dtype)
+title("SpiecEasi Network: Bacteria and Archaea, Whole Water Column")
+legend("topright",bty = "n",
+       legend=c("Bacteria","Archaea"),
+       fill=c("red","green"), border=NA)
+dev.off()
+```
+
+
 ### 3 Domain Network- Oxycline
 ```{r}
 #Extract adjacency matrix from spiecEasi output
@@ -1574,7 +1708,7 @@ grph.oxycline <- adj2igraph(weighted.adj.mat)
 
 
 # Put back in species names
-V(grph.oxycline)$name <- rownames(alldomains_df_full_oxycline)
+V(grph.oxycline)$name <- rownames(alldomains_df_oxycline)
 # V(grph.oxycline)
 
 # Make size of nodes proportional to degree (number of connections)
@@ -1637,7 +1771,7 @@ grph.anoxic <- adj2igraph(weighted.adj.mat)
 
 
 # Put back in species names
-V(grph.anoxic)$name <- rownames(alldomains_df_full_oxycline)
+V(grph.anoxic)$name <- rownames(alldomains_df_anoxic)
 # V(grph.anoxic)
 
 # Make size of nodes proportional to degree (number of connections)
@@ -1694,6 +1828,11 @@ length(E(grph)$weight)
 # percent of neg edges 
 (sum(E(grph)$weight<0)/length(E(grph)$weight))*100
 
+# total number of edges in 2-domain dataset network
+length(E(grph.2domains)$weight)
+# percent of neg edges 
+(sum(E(grph.2domains)$weight<0)/length(E(grph.2domains)$weight))*100
+
 # total number of edges in oxycline network
 length(E(grph.oxycline)$weight)
 # percent of neg edges 
@@ -1712,6 +1851,7 @@ Declining number of total edges going from full dataset --> oxycline only --> an
 the number of edges relatives to total number of possible edges
 ```{r}
 edge_density(grph)
+edge_density(grph.2domains)
 edge_density(grph.oxycline)
 edge_density(grph.anoxic)
 ```
@@ -1723,6 +1863,10 @@ The size of the components, or "clumps," in the network, and how many members in
 # full dataset
 components(grph)$no
 components(grph)$csize
+
+# 2 domains
+components(grph.2domains)$no
+components(grph.2domains)$csize
 
 # oxycline
 components(grph.oxycline)$no
@@ -1741,6 +1885,7 @@ The anoxic network is most disjointed, with 48 clumps and the largest containing
 Path is the shortest distance between two nodes (fewest number of edges). Average path length of a network gives a sense of how connected every node is to another. Unconnected hubs in the netowrk will have "infinite" paths from other hubs. The function `mean_distance` ignores the infinite edges and calculates the average of all other edges
 ```{r}
 mean_distance(grph)
+mean_distance(grph.2domains)
 mean_distance(grph.oxycline)
 mean_distance(grph.anoxic)
 ```
@@ -1758,9 +1903,9 @@ Calculate 4 parameters for each individual node:
 - strength (st) = sum of the weights of all the edges connected to the node
 - betweenness centrality (be) = the number of shortest paths (between all other nodes) that go through the node
 - closeness centrality (cc) = average distance (number of edges) of the node to any other node
-- local clustering coefficient (l.cluster) , aka transitivity = the propoortion of two nodes that are connected by a third node, of being connected to each other (eg. how many of a node's "friends" know each other?)
+- local clustering coefficient (l.cluster) , aka transitivity = the proportion of two nodes that are connected by a third node, of being connected to each other (eg. how many of a node's "friends" know each other?)
 
-All depth network- 
+#### All depths network
 ```{r}
 # First change the weights of the edges (the strength of association) to absolute value. This won't work if negative associations are left with negative signs
 E(grph)$weight <- abs(E(grph)$weight)
@@ -1778,15 +1923,15 @@ l.cluster=transitivity(grph, "local")
 fulldateset_node_measures <- data.frame(ID=names, degree=de, strength=st, betweenness=be, closeness = cc, clustering_coefficient = l.cluster) 
 
 # Put back bac taxaonomy
-temp1 <- left_join(fulldateset_node_measures[1:dim(otu_table(ps_bac_pruned))[1],], bac_taxonomy, by = c("ID" = "#OTU ID")) 
+temp1 <- left_join(fulldateset_node_measures[1:dim(otu_table(ps_bac_pruned_3domains))[1],], bac_taxonomy, by = c("ID" = "#OTU ID")) 
 # delete "Taxonomy-9" and "refined Taxonomy" columns 
 temp1 <- select(temp1, -"taxonomy-9", -"Refined taxonomy")
 
 
-temp2 <- left_join(fulldateset_node_measures[sum(dim(otu_table(ps_bac_pruned))[1],1):sum(dim(otu_table(ps_bac_pruned))[1],dim(otu_table(ps_arch_pruned))[1]),], arch_taxonomy, by = c("ID" = "#OTU ID")) 
+temp2 <- left_join(fulldateset_node_measures[sum(dim(otu_table(ps_bac_pruned_3domains))[1],1):sum(dim(otu_table(ps_bac_pruned_3domains))[1],dim(otu_table(ps_arch_pruned_3domains))[1]),], arch_taxonomy, by = c("ID" = "#OTU ID")) 
 
 
-temp3 <- left_join(fulldateset_node_measures[sum(dim(otu_table(ps_arch_pruned))[1], dim(otu_table(ps_bac_pruned))[1],1):sum(dim(otu_table(ps_arch_pruned))[1], dim(otu_table(ps_bac_pruned))[1],dim(otu_table(ps_euk_pruned))[1]),], euk_taxonomy, by = c("ID" = "#ASV ID")) 
+temp3 <- left_join(fulldateset_node_measures[sum(dim(otu_table(ps_arch_pruned_3domains))[1], dim(otu_table(ps_bac_pruned_3domains))[1],1):sum(dim(otu_table(ps_arch_pruned_3domains))[1], dim(otu_table(ps_bac_pruned_3domains))[1],dim(otu_table(ps_euk_pruned_3domains))[1]),], euk_taxonomy, by = c("ID" = "#ASV ID")) 
 # Rename col names to match those from Bac and Arch
 temp3 <- temp3 %>%
   rename("taxonomy-1" = Kingdom, "taxonomy-2" = Supergroup, "taxonomy-3" = Division, "taxonomy-4" = Class, "taxonomy-5" = Order, "taxonomy-6" = Family, "taxonomy-7" = Genus, "taxonomy-8" = Species)
@@ -1821,6 +1966,25 @@ p <- ggplot(fulldateset_node_measures, aes(x = degree, y = betweenness, ID = ID,
 ggplotly(p, tooltip = c("ID","taxonomy-2", "taxonomy-3", "taxonomy-4", "taxonomy-5"))
 
 ```
+**Summary**
+
+- Highest betweenness: 2 Defferibacreres/ MG-A OTUs (denovo252731 and denovo249977) and a Gammaproteobacteria. Oceanospiralles/ OM182 clade OTU: denovo279114
+- Highest degrees: Several Alphaproteobacteria/SAR11 OTUs, a Chloroflexi/ Anaerolineaceae OTU (denovo317108) and Proteobacteria/ AEGEAN-245 OTU (denovo351910- Blast this one see if there's better taxonomy available now)
+- Nodes with mixed high degree/ high betweenness: 2 Thaumarchaeota Group C3 OTUs, an Actinobacteria/ Acidimicrobiales/ Sva0966 marine group OTU, and a SAR11 (Surface_1 clade) OTU
+- Low betweenness/ high degree
+  - Spirochaetes/ MSBL8
+  - Alphaproteobacteria/ OCS116
+  - Euryacrchaeota/ Halobacteria/ Marine Hydrothermal Vent Group 
+  - Thamarchaeota/ Group C3
+  - Candidate division WS3
+  - Nitrospinaceae
+  - Candidate division OP3
+  - Nitrospira OPB95
+- Eukaryotes?
+  - Rhizaria/ Radiolaria/ Polycystinea/ Spumellarida and Alveolota/ Dinoflagellate/ Syndiniales or Dinphyceae are scattered throughout plot
+  - Ciliates present but less so. Notably Cariacotrichea is present
+
+
 
 Plot node degree and transitivity (clustering coefficient)
 ```{r}
@@ -1834,15 +1998,196 @@ ggplotly(p, tooltip = c("ID","taxonomy-2", "taxonomy-3", "taxonomy-4", "taxonomy
 
 ```
 
+**Summary**
+- High betweenness but low clustering coef:
+  - Deferibacteres/ Marine Group A
+  - Some Syndiniales
+  - Gammaproteobacteria: OM182 clade and Xanthomonadales/ Sinobacteraceae clade, and Vibrionaceae clade
+  - Actinobacteria/ Acidimicrobiales/ Sva0966 marine group OTU
+- High betweenness and high clustering coefficient
+  - Cnidaria, Crustaceae, several Syndinales, Planctomycetes OM190, Euryarchaeota MG II, 1 Spumellarida
+- Low betweenness, High clusering coefficient
+  - Thaumarchaeota MG I, 1 Spumellarida,1 Dinoflagelata/ Dinophyceae, and the No Blast Hit OTU (not even domain assigned- denovo129797- blast this one)
+  
+  
+  
+#### Oxycline network
+```{r}
+# First change the weights of the edges (the strength of association) to absolute value. This won't work if negative associations are left with negative signs
+E(grph.oxycline)$weight <- abs(E(grph.oxycline)$weight)
+
+names=V(grph.oxycline)$name
+de=degree(grph.oxycline)
+st=graph.strength(grph.oxycline)
+be=betweenness(grph.oxycline, normalized=T)
+cc = closeness(grph.oxycline)
+l.cluster=transitivity(grph.oxycline, "local")
 
 
 
-## STOPPED HERE. CONTINUE PLAYING WITH PLOT ABOVE, highliting specific groups (Synd, Spumellaride, Alphas, Deferribac, etc). DO SAME FOR OXYCLINE AND ANOXIC ONLY (WILL NEED TO MAKE EDITS IN FILTERING ABOVE FOR CLEAR NAMES). CONTINUE TO COLLECT OVERALL NETWORK PARAMETERS FOLLOWING: https://dshizuka.github.io/networkanalysis/04_measuring.html#betweenness. REMOVE EUKS TO SEE HOW NETOWORKS CHANGE
+# assemble dataset and match full taxonomy
+fulldateset_node_measures <- data.frame(ID=names, degree=de, strength=st, betweenness=be, closeness = cc, clustering_coefficient = l.cluster) 
+
+# Put back bac taxaonomy
+temp1 <- left_join(fulldateset_node_measures[1:dim(otu_table(ps_bac_oxycline_pruned))[1],], bac_taxonomy, by = c("ID" = "#OTU ID")) 
+# delete "Taxonomy-9" and "refined Taxonomy" columns 
+temp1 <- select(temp1, -"taxonomy-9", -"Refined taxonomy")
+
+
+temp2 <- left_join(fulldateset_node_measures[sum(dim(otu_table(ps_bac_oxycline_pruned))[1],1):sum(dim(otu_table(ps_bac_oxycline_pruned))[1],dim(otu_table(ps_arch_oxycline_pruned))[1]),], arch_taxonomy, by = c("ID" = "#OTU ID")) 
+
+
+temp3 <- left_join(fulldateset_node_measures[sum(dim(otu_table(ps_arch_oxycline_pruned))[1], dim(otu_table(ps_bac_oxycline_pruned))[1],1):sum(dim(otu_table(ps_arch_oxycline_pruned))[1], dim(otu_table(ps_bac_oxycline_pruned))[1],dim(otu_table(ps_euk_oxycline_pruned))[1]),], euk_taxonomy, by = c("ID" = "#ASV ID")) 
+# Rename col names to match those from Bac and Arch
+temp3 <- temp3 %>%
+  rename("taxonomy-1" = Kingdom, "taxonomy-2" = Supergroup, "taxonomy-3" = Division, "taxonomy-4" = Class, "taxonomy-5" = Order, "taxonomy-6" = Family, "taxonomy-7" = Genus, "taxonomy-8" = Species)
+
+# combine back all 3 domains, with new names as row names in a dataframe
+fulldateset_node_measures <- rbind(temp1, temp2, temp3)
+fulldateset_node_measures
+```
+
+Plot betweeness vs degree for each node. 
+
+```{r}
+# replace NA in taxonomy with unidentified 
+# remove nodes with 0 betweenness (can't calculate log10 of 0)
+# replace NaN clustering coefs with 0
+fulldateset_node_measures <- fulldateset_node_measures %>% 
+  replace(is.na(.), "unidentified") %>%
+  filter(!betweenness == 0) 
+
+# get enough colors and randomly rearrange so they are easier to separate on the plot
+mycolors <- colorRampPalette(brewer.pal(12, "Paired"))(length(unique(fulldateset_node_measures$`taxonomy-3`)))
+mycolors <-  sample(mycolors)
+
+# plot with plotly and so I can hover over points and determine which taxa they are
+p <- ggplot(fulldateset_node_measures, aes(x = degree, y = betweenness, ID = ID, shape = `taxonomy-1`, `taxonomy-2` = `taxonomy-2`, color = `taxonomy-3`, `taxonomy-4` = `taxonomy-4`, `taxonomy-5` = `taxonomy-5`)) +
+  geom_point(size = 5) +
+  scale_y_continuous(trans='log10') +
+  scale_color_manual(values = mycolors) +
+  theme_bw()
+ggplotly(p, tooltip = c("ID","taxonomy-2", "taxonomy-3", "taxonomy-4", "taxonomy-5"))
+
+```
+**Summary**
+
+- ...
+
+
+
+Plot node degree and transitivity (clustering coefficient)
+```{r}
+# plot with plotly and so I can hover over points and determine which taxa they are
+p <- ggplot(fulldateset_node_measures, aes(x = clustering_coefficient, y = betweenness, ID = ID, shape = `taxonomy-1`, `taxonomy-2` = `taxonomy-2`, color = `taxonomy-3`, `taxonomy-4` = `taxonomy-4`, `taxonomy-5` = `taxonomy-5`)) +
+  geom_point(size = 5) +
+  scale_color_manual(values = mycolors) +
+    scale_y_continuous(trans='log10') +
+  theme_bw()
+ggplotly(p, tooltip = c("ID","taxonomy-2", "taxonomy-3", "taxonomy-4", "taxonomy-5"))
+
+```
+
+**Summary**
+- ...
+
+
+  
+  
+  
+#### Anoxic network
+```{r}
+# First change the weights of the edges (the strength of association) to absolute value. This won't work if negative associations are left with negative signs
+E(grph.anoxic)$weight <- abs(E(grph.anoxic)$weight)
+
+names=V(grph.anoxic)$name
+de=degree(grph.anoxic)
+st=graph.strength(grph.anoxic)
+be=betweenness(grph.anoxic, normalized=T)
+cc = closeness(grph.anoxic)
+l.cluster=transitivity(grph.anoxic, "local")
+
+
+
+# assemble dataset and match full taxonomy
+fulldateset_node_measures <- data.frame(ID=names, degree=de, strength=st, betweenness=be, closeness = cc, clustering_coefficient = l.cluster) 
+
+# Put back bac taxaonomy
+temp1 <- left_join(fulldateset_node_measures[1:dim(otu_table(ps_bac_anoxic_pruned))[1],], bac_taxonomy, by = c("ID" = "#OTU ID")) 
+# delete "Taxonomy-9" and "refined Taxonomy" columns 
+temp1 <- select(temp1, -"taxonomy-9", -"Refined taxonomy")
+
+
+temp2 <- left_join(fulldateset_node_measures[sum(dim(otu_table(ps_bac_anoxic_pruned))[1],1):sum(dim(otu_table(ps_bac_anoxic_pruned))[1],dim(otu_table(ps_arch_anoxic_pruned))[1]),], arch_taxonomy, by = c("ID" = "#OTU ID")) 
+
+
+temp3 <- left_join(fulldateset_node_measures[sum(dim(otu_table(ps_arch_anoxic_pruned))[1], dim(otu_table(ps_bac_anoxic_pruned))[1],1):sum(dim(otu_table(ps_arch_anoxic_pruned))[1], dim(otu_table(ps_bac_anoxic_pruned))[1],dim(otu_table(ps_euk_anoxic_pruned))[1]),], euk_taxonomy, by = c("ID" = "#ASV ID")) 
+# Rename col names to match those from Bac and Arch
+temp3 <- temp3 %>%
+  rename("taxonomy-1" = Kingdom, "taxonomy-2" = Supergroup, "taxonomy-3" = Division, "taxonomy-4" = Class, "taxonomy-5" = Order, "taxonomy-6" = Family, "taxonomy-7" = Genus, "taxonomy-8" = Species)
+
+# combine back all 3 domains, with new names as row names in a dataframe
+fulldateset_node_measures <- rbind(temp1, temp2, temp3)
+fulldateset_node_measures
+```
+
+Plot betweeness vs degree for each node. 
+
+```{r}
+# replace NA in taxonomy with unidentified 
+# remove nodes with 0 betweenness (can't calculate log10 of 0)
+# replace NaN clustering coefs with 0
+fulldateset_node_measures <- fulldateset_node_measures %>% 
+  replace(is.na(.), "unidentified") %>%
+  filter(!betweenness == 0) 
+
+# get enough colors and randomly rearrange so they are easier to separate on the plot
+mycolors <- colorRampPalette(brewer.pal(12, "Paired"))(length(unique(fulldateset_node_measures$`taxonomy-3`)))
+mycolors <-  sample(mycolors)
+
+# plot with plotly and so I can hover over points and determine which taxa they are
+p <- ggplot(fulldateset_node_measures, aes(x = degree, y = betweenness, ID = ID, shape = `taxonomy-1`, `taxonomy-2` = `taxonomy-2`, color = `taxonomy-3`, `taxonomy-4` = `taxonomy-4`, `taxonomy-5` = `taxonomy-5`)) +
+  geom_point(size = 5) +
+  scale_y_continuous(trans='log10') +
+  scale_color_manual(values = mycolors) +
+  theme_bw()
+ggplotly(p, tooltip = c("ID","taxonomy-2", "taxonomy-3", "taxonomy-4", "taxonomy-5"))
+
+```
+**Summary**
+
+- ...
+
+
+
+Plot node degree and transitivity (clustering coefficient)
+```{r}
+# plot with plotly and so I can hover over points and determine which taxa they are
+p <- ggplot(fulldateset_node_measures, aes(x = clustering_coefficient, y = betweenness, ID = ID, shape = `taxonomy-1`, `taxonomy-2` = `taxonomy-2`, color = `taxonomy-3`, `taxonomy-4` = `taxonomy-4`, `taxonomy-5` = `taxonomy-5`)) +
+  geom_point(size = 5) +
+  scale_color_manual(values = mycolors) +
+    scale_y_continuous(trans='log10') +
+  theme_bw()
+ggplotly(p, tooltip = c("ID","taxonomy-2", "taxonomy-3", "taxonomy-4", "taxonomy-5"))
+
+```
+
+**Summary**
+- ...
+
+  
+  
+  
+  
+  
+  
+  
+## STOPPED HERE. CONTINUE PLAYING WITH PLOTS ABOVE, highliting specific groups (Synd, Spumellaride, Alphas, Deferribac, etc). COLLECT OVERALL NETWORK PARAMETERS AFTER REMOVING EUKS TO SEE HOW NETOWORKS CHANGE
 - report blast/ new SILVA results for 
   - "No blast hit" denovo129797
   - "AEGAN-245" from a metagenome denovo351910
+- Determine total number of edges connected to euks vs bacteria
   
-  Figure out how to calculate closeness for only major hub, rather than whole 
 
 
 
