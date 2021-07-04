@@ -14,7 +14,6 @@ library(tidyverse)
 library(phyloseq)
 library(phangorn)
 library(readr)
-#library(seqinr)
 library(ape)
 library(vegan)
 library(RColorBrewer)
@@ -26,6 +25,8 @@ library(psych)
 library(Matrix)
 library(igraph)
 library(plotly)
+library(egg)
+library(ggvegan)
 
 
 # Helper functions from J. Cram https://biovcnet.github.io/_pages/NetworkScience_SparCC.nb
@@ -409,7 +410,7 @@ plot_bar(ps_ra_mean_division, x = "Sample", fill = "Division") +
 
 # Abundance Plots
 
-## Division
+## Divisions
 ### Prepare data
 Extract mean relative abundance, glommed by division, from the phyloseq object and pair it to taxonomic data
 ```{r}
@@ -420,6 +421,15 @@ division_df$ASV <- rownames(division_df)
 otu_table_mean_ra <- left_join(division_df, as_tibble(taxonomy, rownames = "ASV"), by = "ASV")
 otu_table_mean_ra
 ```
+
+Some manual curating for plottin
+```{r}
+# Make a new column that has Supergroup-Division in same colum
+otu_table_mean_ra$SupergroupDivision <- paste(otu_table_mean_ra$Supergroup, otu_table_mean_ra$Division)
+
+otu_table_mean_ra
+```
+
 
 
 Pivot longer
@@ -447,7 +457,7 @@ otu_table_mean_ra
 otu_table_mean_ra$OxCond <- factor(otu_table_mean_ra$OxCond, levels = c("Oxycline", "ShallowAnoxic", "Euxinic"))
 otu_table_mean_ra$SizeFraction <- factor(otu_table_mean_ra$SizeFraction, levels = c("PA", "FL"))
 
-euk_divisions_bubbleplot_color <- ggplot(otu_table_mean_ra,aes (x = as.character(Depth), y = reorder(Division, Mean_RA, function(x){sum(x,na.rm = TRUE)}), color = OxCond)) + 
+euk_divisions_bubbleplot_color <- ggplot(otu_table_mean_ra,aes (x = as.character(Depth), y = reorder(SupergroupDivision, Mean_RA, function(x){sum(x,na.rm = TRUE)}), color = OxCond)) + 
   geom_point(aes(size =Mean_RA))+
   facet_wrap(Season~SizeFraction, scales = "free_x", drop= TRUE, ncol = 4) +
   scale_size(range = c(1,15)) +
@@ -467,19 +477,625 @@ euk_divisions_bubbleplot_color
 
 Save figure
 ```{r}
-ggsave(filename = "Figures/euk_divisions_bubbleplot_color.eps", plot = euk_divisions_bubbleplot_color, units = c("in"), width = 10, height = 6, dpi = 300)
+# set explicit panel size so they will be consistent for all figures
+euk_divisions_bubbleplot_color <- set_panel_size(euk_divisions_bubbleplot_color, width  = unit(1.7, "in"), height = unit(5.5, "in"))  
+
+ggsave(filename = "Figures/euk_divisions_bubbleplot_color.eps", plot = euk_divisions_bubbleplot_color, units = c("in"), width = 14, height = 8, dpi = 300)
 ```
 
 
-#### Save and re-load dataset
+
+## Orders within Alveolata
+### Prepare data
+Filter to only Alveolates; glom by order
 ```{r}
-# save.image("EnvironmentBackups/CariacoEuks_postanalysis_vars_upto_bubbleplots.RData")
+keeptaxa <- taxa_names(ps_ra_mean)[(as.data.frame(tax_table(ps_ra_mean))$Supergroup %in% c("Alveolata"))]
+ps_ra_mean_alveolates <- prune_taxa(keeptaxa, ps_ra_mean)
+ps_ra_mean_alveolate_orders <- tax_glom(ps_ra_mean_alveolates, "Order")
+
+aveloates_df <- data.frame(otu_table(ps_ra_mean_alveolate_orders))
+colnames(aveloates_df) <- colnames(otu_table(ps_ra_mean_alveolate_orders))
+aveloates_df$ASV <- rownames(aveloates_df)
+
+otu_table_mean_ra <- left_join(aveloates_df, as_tibble(taxonomy, rownames = "ASV"), by = "ASV")
+otu_table_mean_ra
 ```
 
-Re-load
+Some manual curating for plottin
 ```{r}
-load("EnvironmentBackups/CariacoEuks_postanalysis_vars_upto_bubbleplots.RData")
+# Make a new column that has descriptive taxonomy
+otu_table_mean_ra$Descriptive <- paste(otu_table_mean_ra$Division, otu_table_mean_ra$Class, otu_table_mean_ra$Order)
+otu_table_mean_ra
 ```
+
+
+
+Pivot longer
+```{r}
+otu_table_mean_ra <- pivot_longer(otu_table_mean_ra, cols = unique(metadata$Replicate), names_to = "Replicate", values_to = "Mean_RA")
+otu_table_mean_ra
+```
+
+
+Join metadata 
+```{r}
+otu_table_mean_ra <- left_join(otu_table_mean_ra, unique(select(metadata, c("Replicate", "Depth", "SizeFraction", "Season", "OxCond", "Fluorescence", "BeamAtt", "O2", "Temp", "Salinity", "H2S", "ParticulateS", "TZVS", "CH4", "NO3", "NO2", "NH4", "PO4", "Chemoautotrophy", "BNP", "MicroAbun(x10^8 L^-1)", "FlagAbun(x10^5 L-1)", "VLP(x10^8 L-1)"))), by = "Replicate")
+
+# Replace zeroes in RA with NA (better for plotting)
+otu_table_mean_ra$Mean_RA[otu_table_mean_ra$Mean_RA == 0] <- NA
+
+otu_table_mean_ra
+```
+
+
+### Bubble Plot of Orders within Alveolata
+
+```{r}
+# reorder some factors to make them plot in the order I want
+otu_table_mean_ra$OxCond <- factor(otu_table_mean_ra$OxCond, levels = c("Oxycline", "ShallowAnoxic", "Euxinic"))
+otu_table_mean_ra$SizeFraction <- factor(otu_table_mean_ra$SizeFraction, levels = c("PA", "FL"))
+
+alveolata_bubbleplot_color <- ggplot(otu_table_mean_ra,aes (x = as.character(Depth), y = reorder(Descriptive, Mean_RA, function(x){sum(x,na.rm = TRUE)}), color = OxCond)) + 
+  geom_point(aes(size =Mean_RA))+
+  facet_wrap(Season~SizeFraction, scales = "free_x", drop= TRUE, ncol = 4) +
+  scale_size(range = c(1,15)) +
+  scale_size_area(breaks = c(0,.25,.5,.75,1), max_size = 6) +
+  xlab("Depth") +
+  ylab("") +
+  labs(size="Relative Abundance", color = "Redox Condition") +
+   scale_color_manual(values = c("blue", "red", "brown4")) +
+  theme_bw() +
+  theme(axis.text.x = element_text(size=10),
+        axis.text.y = element_text(size=10),
+        axis.title.x= element_text(size=12),
+        axis.title.y= element_text(size=12))
+
+alveolata_bubbleplot_color
+```
+
+Save figure
+```{r}
+# set explicit panel size so they will be consistent for all figures
+alveolata_bubbleplot_color <- set_panel_size(alveolata_bubbleplot_color, width  = unit(1.7, "in"), height = unit(7, "in"))  
+
+ggsave(filename = "Figures/alveolata_bubbleplot_color.eps", plot = alveolata_bubbleplot_color, units = c("in"), width = 14, height = 8, dpi = 300)
+```
+
+
+
+
+
+
+## Orders within Rhizaria
+### Prepare data
+Filter to only Rhizaria; glom by order
+```{r}
+keeptaxa <- taxa_names(ps_ra_mean)[(as.data.frame(tax_table(ps_ra_mean))$Supergroup %in% c("Rhizaria"))]
+ps_ra_mean_rhizaria <- prune_taxa(keeptaxa, ps_ra_mean)
+ps_ra_mean_rhizaria_orders <- tax_glom(ps_ra_mean_rhizaria, "Order")
+
+rhizaria_df <- data.frame(otu_table(ps_ra_mean_rhizaria_orders))
+colnames(rhizaria_df) <- colnames(otu_table(ps_ra_mean_rhizaria_orders))
+rhizaria_df$ASV <- rownames(rhizaria_df)
+
+otu_table_mean_ra <- left_join(rhizaria_df, as_tibble(taxonomy, rownames = "ASV"), by = "ASV")
+otu_table_mean_ra
+```
+
+Some manual curating for plottin
+```{r}
+# Make a new column that has descriptive taxonomy
+otu_table_mean_ra$Descriptive <- paste(otu_table_mean_ra$Division, otu_table_mean_ra$Class, otu_table_mean_ra$Order)
+otu_table_mean_ra
+```
+
+
+
+Pivot longer
+```{r}
+otu_table_mean_ra <- pivot_longer(otu_table_mean_ra, cols = unique(metadata$Replicate), names_to = "Replicate", values_to = "Mean_RA")
+otu_table_mean_ra
+```
+
+
+Join metadata 
+```{r}
+otu_table_mean_ra <- left_join(otu_table_mean_ra, unique(select(metadata, c("Replicate", "Depth", "SizeFraction", "Season", "OxCond", "Fluorescence", "BeamAtt", "O2", "Temp", "Salinity", "H2S", "ParticulateS", "TZVS", "CH4", "NO3", "NO2", "NH4", "PO4", "Chemoautotrophy", "BNP", "MicroAbun(x10^8 L^-1)", "FlagAbun(x10^5 L-1)", "VLP(x10^8 L-1)"))), by = "Replicate")
+
+# Replace zeroes in RA with NA (better for plotting)
+otu_table_mean_ra$Mean_RA[otu_table_mean_ra$Mean_RA == 0] <- NA
+
+otu_table_mean_ra
+```
+
+
+### Bubble Plot of Orders within Rhizaria
+
+```{r}
+# reorder some factors to make them plot in the order I want
+otu_table_mean_ra$OxCond <- factor(otu_table_mean_ra$OxCond, levels = c("Oxycline", "ShallowAnoxic", "Euxinic"))
+otu_table_mean_ra$SizeFraction <- factor(otu_table_mean_ra$SizeFraction, levels = c("PA", "FL"))
+
+rhizaria_bubbleplot_color <- ggplot(otu_table_mean_ra,aes (x = as.character(Depth), y = reorder(Descriptive, Mean_RA, function(x){sum(x,na.rm = TRUE)}), color = OxCond)) + 
+  geom_point(aes(size =Mean_RA))+
+  facet_wrap(Season~SizeFraction, scales = "free_x", drop= TRUE, ncol = 4) +
+  scale_size(range = c(1,15)) +
+  scale_size_area(breaks = c(0,.25,.5,.75,1), max_size = 6) +
+  xlab("Depth") +
+  ylab("") +
+  labs(size="Relative Abundance", color = "Redox Condition") +
+   scale_color_manual(values = c("blue", "red", "brown4")) +
+  theme_bw() +
+  theme(axis.text.x = element_text(size=10),
+        axis.text.y = element_text(size=10),
+        axis.title.x= element_text(size=12),
+        axis.title.y= element_text(size=12))
+
+rhizaria_bubbleplot_color
+```
+
+Save figure
+```{r}
+# set explicit panel size so they will be consistent for all figures
+rhizaria_bubbleplot_color <- set_panel_size(rhizaria_bubbleplot_color, width  = unit(1.7, "in"), height = unit(5, "in"))  
+
+ggsave(filename = "Figures/rhizaria_bubbleplot_color.eps", plot = rhizaria_bubbleplot_color, units = c("in"), width = 14, height = 8, dpi = 300)
+```
+
+
+
+
+## Orders within Opisthokonta
+### Prepare data
+Filter to only Opisthokonta; glom by order
+```{r}
+keeptaxa <- taxa_names(ps_ra_mean)[(as.data.frame(tax_table(ps_ra_mean))$Supergroup %in% c("Opisthokonta"))]
+ps_ra_mean_opisthokonta <- prune_taxa(keeptaxa, ps_ra_mean)
+ps_ra_mean_opisthokonta_orders <- tax_glom(ps_ra_mean_opisthokonta, "Order")
+
+opisthokonta_df <- data.frame(otu_table(ps_ra_mean_opisthokonta_orders))
+colnames(opisthokonta_df) <- colnames(otu_table(ps_ra_mean_opisthokonta_orders))
+opisthokonta_df$ASV <- rownames(opisthokonta_df)
+
+otu_table_mean_ra <- left_join(opisthokonta_df, as_tibble(taxonomy, rownames = "ASV"), by = "ASV")
+otu_table_mean_ra
+```
+
+Some manual curating for plottin
+```{r}
+# Make a new column that has descriptive taxonomy
+otu_table_mean_ra$Descriptive <- paste(otu_table_mean_ra$Division, otu_table_mean_ra$Class, otu_table_mean_ra$Order)
+otu_table_mean_ra
+```
+
+
+
+Pivot longer
+```{r}
+otu_table_mean_ra <- pivot_longer(otu_table_mean_ra, cols = unique(metadata$Replicate), names_to = "Replicate", values_to = "Mean_RA")
+otu_table_mean_ra
+```
+
+
+Join metadata 
+```{r}
+otu_table_mean_ra <- left_join(otu_table_mean_ra, unique(select(metadata, c("Replicate", "Depth", "SizeFraction", "Season", "OxCond", "Fluorescence", "BeamAtt", "O2", "Temp", "Salinity", "H2S", "ParticulateS", "TZVS", "CH4", "NO3", "NO2", "NH4", "PO4", "Chemoautotrophy", "BNP", "MicroAbun(x10^8 L^-1)", "FlagAbun(x10^5 L-1)", "VLP(x10^8 L-1)"))), by = "Replicate")
+
+# Replace zeroes in RA with NA (better for plotting)
+otu_table_mean_ra$Mean_RA[otu_table_mean_ra$Mean_RA == 0] <- NA
+
+otu_table_mean_ra
+```
+
+
+### Bubble Plot of Orders within Rhizaria
+
+```{r}
+# reorder some factors to make them plot in the order I want
+otu_table_mean_ra$OxCond <- factor(otu_table_mean_ra$OxCond, levels = c("Oxycline", "ShallowAnoxic", "Euxinic"))
+otu_table_mean_ra$SizeFraction <- factor(otu_table_mean_ra$SizeFraction, levels = c("PA", "FL"))
+
+opithokonta_bubbleplot_color <- ggplot(otu_table_mean_ra,aes (x = as.character(Depth), y = reorder(Descriptive, Mean_RA, function(x){sum(x,na.rm = TRUE)}), color = OxCond)) + 
+  geom_point(aes(size =Mean_RA))+
+  facet_wrap(Season~SizeFraction, scales = "free_x", drop= TRUE, ncol = 4) +
+  scale_size(range = c(1,15)) +
+  scale_size_area(breaks = c(0,.25,.5,.75,1), max_size = 6) +
+  xlab("Depth") +
+  ylab("") +
+  labs(size="Relative Abundance", color = "Redox Condition") +
+   scale_color_manual(values = c("blue", "red", "brown4")) +
+  theme_bw() +
+  theme(axis.text.x = element_text(size=10),
+        axis.text.y = element_text(size=10),
+        axis.title.x= element_text(size=12),
+        axis.title.y= element_text(size=12))
+
+opithokonta_bubbleplot_color
+```
+
+Save figure
+```{r}
+# set explicit panel size so they will be consistent for all figures
+opithokonta_bubbleplot_color <- set_panel_size(opithokonta_bubbleplot_color, width  = unit(1.7, "in"), height = unit(5, "in"))  
+
+ggsave(filename = "Figures/opithokonta_bubbleplot_color.eps", plot = opithokonta_bubbleplot_color, units = c("in"), width = 14, height = 8, dpi = 300)
+```
+
+
+
+
+## Orders within Stramenopiles
+### Prepare data
+Filter to only Stramenopiles; glom by order
+```{r}
+keeptaxa <- taxa_names(ps_ra_mean)[(as.data.frame(tax_table(ps_ra_mean))$Supergroup %in% c("Stramenopiles"))]
+ps_ra_mean_stramenopiles <- prune_taxa(keeptaxa, ps_ra_mean)
+ps_ra_mean_stramenopiles_orders <- tax_glom(ps_ra_mean_stramenopiles, "Order")
+
+stramenopiles_df <- data.frame(otu_table(ps_ra_mean_stramenopiles_orders))
+colnames(stramenopiles_df) <- colnames(otu_table(ps_ra_mean_stramenopiles_orders))
+stramenopiles_df$ASV <- rownames(stramenopiles_df)
+
+otu_table_mean_ra <- left_join(stramenopiles_df, as_tibble(taxonomy, rownames = "ASV"), by = "ASV")
+otu_table_mean_ra
+```
+
+Some manual curating for plottin
+```{r}
+# Make a new column that has descriptive taxonomy
+otu_table_mean_ra$Descriptive <- paste(otu_table_mean_ra$Division, otu_table_mean_ra$Class, otu_table_mean_ra$Order)
+otu_table_mean_ra
+```
+
+
+
+Pivot longer
+```{r}
+otu_table_mean_ra <- pivot_longer(otu_table_mean_ra, cols = unique(metadata$Replicate), names_to = "Replicate", values_to = "Mean_RA")
+otu_table_mean_ra
+```
+
+
+Join metadata 
+```{r}
+otu_table_mean_ra <- left_join(otu_table_mean_ra, unique(select(metadata, c("Replicate", "Depth", "SizeFraction", "Season", "OxCond", "Fluorescence", "BeamAtt", "O2", "Temp", "Salinity", "H2S", "ParticulateS", "TZVS", "CH4", "NO3", "NO2", "NH4", "PO4", "Chemoautotrophy", "BNP", "MicroAbun(x10^8 L^-1)", "FlagAbun(x10^5 L-1)", "VLP(x10^8 L-1)"))), by = "Replicate")
+
+# Replace zeroes in RA with NA (better for plotting)
+otu_table_mean_ra$Mean_RA[otu_table_mean_ra$Mean_RA == 0] <- NA
+
+otu_table_mean_ra
+```
+
+
+### Bubble Plot of Orders within Rhizaria
+
+```{r}
+# reorder some factors to make them plot in the order I want
+otu_table_mean_ra$OxCond <- factor(otu_table_mean_ra$OxCond, levels = c("Oxycline", "ShallowAnoxic", "Euxinic"))
+otu_table_mean_ra$SizeFraction <- factor(otu_table_mean_ra$SizeFraction, levels = c("PA", "FL"))
+
+stramenopiles_bubbleplot_color <- ggplot(otu_table_mean_ra,aes (x = as.character(Depth), y = reorder(Descriptive, Mean_RA, function(x){sum(x,na.rm = TRUE)}), color = OxCond)) + 
+  geom_point(aes(size =Mean_RA))+
+  facet_wrap(Season~SizeFraction, scales = "free_x", drop= TRUE, ncol = 4) +
+  scale_size(range = c(1,15)) +
+  scale_size_area(breaks = c(0,.25,.5,.75,1), max_size = 6) +
+  xlab("Depth") +
+  ylab("") +
+  labs(size="Relative Abundance", color = "Redox Condition") +
+   scale_color_manual(values = c("blue", "red", "brown4")) +
+  theme_bw() +
+  theme(axis.text.x = element_text(size=10),
+        axis.text.y = element_text(size=10),
+        axis.title.x= element_text(size=12),
+        axis.title.y= element_text(size=12))
+
+stramenopiles_bubbleplot_color
+```
+
+Save figure
+```{r}
+# set explicit panel size so they will be consistent for all figures
+stramenopiles_bubbleplot_color <- set_panel_size(stramenopiles_bubbleplot_color, width  = unit(1.7, "in"), height = unit(10, "in"))  
+
+ggsave(filename = "Figures/stramenopiles_bubbleplot_color.eps", plot = stramenopiles_bubbleplot_color, units = c("in"), width = 14, height = 11, dpi = 300)
+```
+
+
+# Diversity
+
+## Calculate Shannon's diversity using vegan
+```{r}
+shannons <- vegan::diversity(t(otu_table(ps)), index = "shannon")
+shannons <- t(shannons)
+shannons
+```
+
+## Average the replicates
+```{r}
+shannons_mean <-  
+  mutate(data.frame(shannons), "103A" = rowMeans(select(data.frame(shannons), c("AE3a103A","AE3b103A")), na.rm = TRUE)) %>%
+  mutate(data.frame(shannons), "198A" = rowMeans(select(data.frame(shannons), c("AE3b198A")), na.rm = TRUE))  %>% # Sample AE3a198A was removed
+  mutate(data.frame(shannons), "234A" = rowMeans(select(data.frame(shannons), c("AE3a234A","AE3b234A")), na.rm = TRUE)) %>%
+  mutate(data.frame(shannons), "295A" = rowMeans(select(data.frame(shannons), c("AE3a295A","AE3b295A")), na.rm = TRUE)) %>%
+  mutate(data.frame(shannons), "314A" = rowMeans(select(data.frame(shannons), c("AE3a314A")), na.rm = TRUE)) %>%  # Sample AE3b314A was removed
+  mutate(data.frame(shannons), "900AM" = rowMeans(select(data.frame(shannons), c("AE3a900AM","AE1b900AM")), na.rm = TRUE)) %>%
+  mutate(data.frame(shannons), "103B" = rowMeans(select(data.frame(shannons), c("AE3a103B","AE3b103B")), na.rm = TRUE)) %>%
+  mutate(data.frame(shannons), "198B" = rowMeans(select(data.frame(shannons), c("AE3a198B","AE3b198B")), na.rm = TRUE)) %>%
+  mutate(data.frame(shannons), "234B" = rowMeans(select(data.frame(shannons), c("AE3a234B","AE3b234B")), na.rm = TRUE)) %>%
+  mutate(data.frame(shannons), "295B" = rowMeans(select(data.frame(shannons), c("AE3a295B","AE3b295B")), na.rm = TRUE)) %>%
+  mutate(data.frame(shannons), "314B" = rowMeans(select(data.frame(shannons), c("AE3a314B","AE3b314B")), na.rm = TRUE)) %>%
+  mutate(data.frame(shannons), "900BM" = rowMeans(select(data.frame(shannons), c("AE3a900BM","AE1b900BM")), na.rm = TRUE)) %>%
+  mutate(data.frame(shannons), "143A" = rowMeans(select(data.frame(shannons), c("AE2a143A","AE2b143A")), na.rm = TRUE)) %>%
+  mutate(data.frame(shannons), "200A" = rowMeans(select(data.frame(shannons), c("AE2b200A")), na.rm = TRUE)) %>% # AE2a200A was removed
+  mutate(data.frame(shannons), "237A" = rowMeans(select(data.frame(shannons), c("AE2a237A","AE2b237A")), na.rm = TRUE)) %>%
+  mutate(data.frame(shannons), "247A" = rowMeans(select(data.frame(shannons), c("AE2a247A","AE2b247A")), na.rm = TRUE)) %>%
+  mutate(data.frame(shannons), "267A" = rowMeans(select(data.frame(shannons), c("AE2a267A","AE2b267A")), na.rm = TRUE)) %>%
+  mutate(data.frame(shannons), "900AN" = rowMeans(select(data.frame(shannons), c("AE2a900AN")), na.rm = TRUE)) %>% # AE2b900AN was removed
+  mutate(data.frame(shannons), "143B" = rowMeans(select(data.frame(shannons), c("AE2a143B","AE2b143B")), na.rm = TRUE)) %>%
+  mutate(data.frame(shannons), "200B" = rowMeans(select(data.frame(shannons), c("AE2b200B")), na.rm = TRUE)) %>% # AE2a200B was removed
+  mutate(data.frame(shannons), "237B" = rowMeans(select(data.frame(shannons), c("AE2a237B","AE2b237B")), na.rm = TRUE)) %>%
+  mutate(data.frame(shannons), "247B" = rowMeans(select(data.frame(shannons), c("AE2a247B","AE2b247B")), na.rm = TRUE)) %>%
+  mutate(data.frame(shannons), "267B" = rowMeans(select(data.frame(shannons), c("AE2b267B")), na.rm = TRUE)) %>% # AE2a267B was removed
+  mutate(data.frame(shannons), "900BN" = rowMeans(select(data.frame(shannons), c("AE2b900BN")), na.rm = TRUE)) # AE2a900BN was removed
+
+shannons_mean <- shannons_mean[,unique(metadata$Replicate)]
+
+shannons_mean
+```
+
+## Prepare data for plotting
+```{r}
+# Pivot longer
+shannons_mean <- pivot_longer(shannons_mean, cols = unique(metadata$Replicate), names_to = "Replicate", values_to = "Shannons")
+
+# Join metadata
+shannons_mean <- left_join(shannons_mean, unique(select(metadata, c("Replicate", "Depth", "SizeFraction", "Season", "OxCond", "Fluorescence", "BeamAtt", "O2", "Temp", "Salinity", "H2S", "ParticulateS", "TZVS", "CH4", "NO3", "NO2", "NH4", "PO4", "Chemoautotrophy", "BNP", "MicroAbun(x10^8 L^-1)", "FlagAbun(x10^5 L-1)", "VLP(x10^8 L-1)"))), by = "Replicate")
+
+shannons_mean
+```
+
+## Plot
+```{r}
+# reorder some factors to make them plot in the order I want
+shannons_mean$OxCond <- factor(shannons_mean$OxCond, levels = c("Oxycline", "ShallowAnoxic", "Euxinic"))
+shannons_mean$SizeFraction <- factor(shannons_mean$SizeFraction, levels = c("PA", "FL"))
+
+shannonsplot <- ggplot(shannons_mean, aes(x = Depth, y = Shannons, color = OxCond)) +
+  geom_line(size=1, color = "black", lty = "dotted") +
+  geom_point(size=3, shape = c(16)) +
+  scale_x_continuous(name = "depth [m]") +
+  scale_x_reverse(expand = c(0, 0)) +
+  coord_flip(xlim = c(910, 100)) + 
+  theme_bw() +
+  theme(legend.position = "right") +
+  facet_wrap(Season~SizeFraction, drop= TRUE, ncol = 4) +
+  scale_color_manual(values = c("blue", "red", "brown4")) +
+  labs(color = "Redox Condition")
+
+shannonsplot
+
+```
+
+Export Plot
+```{r}
+# set explicit panel size so they will be consistent for all figures
+shannonsplot <- set_panel_size(shannonsplot, width  = unit(1.7, "in"), height = unit(3.5, "in"))  
+
+ggsave(filename = "Figures/shannonsplot.eps", plot = shannonsplot, units = c("in"), width = 14, height = 11, dpi = 300)
+```
+
+
+
+
+# Ordinations
+
+## Filter 
+
+McMurdie and Holmes (2013) filter out taxa that were not seen with more than 3 counts in at least 20% of the samples. Also add a pseduocount of 1 to all counts. This is so that later when we do different calculations (log, division, etc) we don't get back errors due to zeroes
+```{r}
+ps_filtered = filter_taxa(ps, function(x) sum(x > 3) > (0.2*length(x)), TRUE) 
+ps_filtered <- transform_sample_counts(ps_filtered, function(x) x+1)
+# Also make a filtered version of the relative abundance count table (for plotting purposes)
+ps_ra_filtered <- prune_taxa(taxa_names(ps_filtered),ps_ra) # prune from ps_ra object (relative abundances)
+# check number of ASVs in each
+ps
+ps_filtered
+ps_ra_filtered
+```
+Reduced from 13,427 to 979 ASVs
+
+
+Re-root tree again incase the root was removed
+
+Lastly, reroot-the tree affiliated with the ps_filtered and ps_ra_filtered dataset, since the root may have been removed when filtering
+
+```{r}
+# first define function from link above to find furthest outgroup
+pick_new_outgroup <- function(tree.unrooted){
+require("magrittr")
+require("data.table")
+require("ape") # ape::Ntip
+# tablify parts of tree that we need.
+treeDT <- 
+     cbind(
+         data.table(tree.unrooted$edge),
+         data.table(length = tree.unrooted$edge.length)
+     )[1:Ntip(tree.unrooted)] %>% 
+ cbind(data.table(id = tree.unrooted$tip.label))
+ # Take the longest terminal branch as outgroup
+ new.outgroup <- treeDT[which.max(length)]$id
+ return(new.outgroup) }
+# then run on my phyloseq tree
+my.tree <- phy_tree(ps_filtered)
+out.group <- pick_new_outgroup(my.tree)
+out.group
+# Then use this outgroup to root the tree
+new.tree1 <- ape::root(my.tree, outgroup=out.group, resolve.root=TRUE)
+phy_tree(ps_filtered) <- new.tree1
+phy_tree(ps_ra_filtered) <- new.tree1
+# Check if tree is binary (not multichotomous)
+is.binary.tree(phy_tree(ps_filtered))
+```
+
+
+## Test for compositionality
+based on Coenen et al. tutorials for clustering. See [repo](https://github.com/WeitzGroup/analyzing_microbiome_timeseries)
+```{r}
+# Estimate covariance matrix for OTUs
+covariance_matrix <- as.matrix(otu_table(ps_filtered)) %*% t(otu_table(ps_filtered))
+# %*% = matrix multiplication sign in R; used here to multiply OTU/ASV data matrix to itself to estimate covariance.
+# Evaluate determinant of covariance matrix
+cov_determinant <- det(covariance_matrix)
+cov_determinant
+```
+The determinant of the covariance matrix (what we just calculated) is equivalent to the product of the proportion of variance explained by every PCA axis. If the determinant is 0, that means there is an axis which explains 0 variance that we can't separate from the other axes. This means the data need to be transformed to be suitable for PCA. 
+
+
+## PCA
+PCA is essentially a type of PCoA  using the Euclidean distance matrix as input. When combined with a log-ratio transformation of the count table, this is deemed appropriate for *compositional* datasets.
+
+First do a **CLR, centered log ratio** transformation of the absolute abundance data (after filtering), as suggested by [Gloor et al. 2017](https://www.frontiersin.org/articles/10.3389/fmicb.2017.02224/full) and check the determinant of this matrix. Compare it to the determinant without any transformation.
+{Also commented out for now because takes a few minutes}
+```{r}
+# Estimate covariance matrix for absolute abundance ASV table
+covariance_matrix <- as.matrix(otu_table(ps_filtered)) %*% t(otu_table(ps_filtered))
+
+# Evaluate determinant of covariance matrix
+cov_determinant <- det(covariance_matrix)
+
+# Estimate covariance matrix for CLR-transformed ASV table
+clr_asv_table_ps_filtered <- data.frame(compositions::clr(t(otu_table(ps_filtered))))
+
+## Check new determinant of clr transformed table
+new_covdet <- det(as.matrix(clr_asv_table_ps_filtered) %*% t(clr_asv_table_ps_filtered))
+
+# Compare
+cov_determinant #Original Count Data
+new_covdet # New
+```
+The determinant of the CLR-transformed table is not zero, so we can proceed with PCA of the CLR-transformed data. 
+
+Generate the PCA and visualize axes
+```{r}
+# Generate a Principle Component Analysis (PCA) and evaluated based on the eigen decomposition from sample covariance matrix. 
+lograt_pca <- prcomp(clr_asv_table_ps_filtered) 
+# NOTE- this is equivalent to first making a Euclidean distance matrix using the CLR data table and then running a PCoA. A Euclidean distance matrix of a log-transformed data table = an Aitchison distance matrix. So this is equivalent to the compositional methods listed in Gloor et al.
+# Visual representation with a screeplot
+lograt_variances <- as.data.frame(lograt_pca$sdev^2/sum(lograt_pca$sdev^2)) %>% #Extract axes
+  # Format to plot
+  select(PercVar = 'lograt_pca$sdev^2/sum(lograt_pca$sdev^2)') %>% 
+  rownames_to_column(var = "PCaxis") %>% 
+  data.frame
+head(lograt_variances)
+# Plot screeplot
+ggplot(lograt_variances, aes(x = as.numeric(PCaxis), y = PercVar)) + 
+  geom_bar(stat = "identity", fill = "grey", color = "black") +
+  theme_minimal() +
+  theme(axis.title = element_text(color = "black", face = "bold", size = 10),
+        axis.text.y = element_text(color = "black", face = "bold"),
+        axis.text.x = element_blank()) +
+  labs(x = "PC axis", y = "% Variance", title = "Log-Ratio PCA Screeplot, CLR Tranformation")
+```
+First two axes explain a good proportion of variance: 24.8 + 13.4 = 38.2
+
+
+
+Visualize the PCA
+```{r}
+# lograt_pca$x #View PC values
+pca_lograt_frame <- data.frame(lograt_pca$x) %>% 
+  rownames_to_column(var = "Sample Name")
+# Merge metadata into the pca data table
+pca_lograt_frame <- left_join(pca_lograt_frame, metadata, by = "Sample Name")
+pca_lograt_frame
+
+
+# reorder some factors to make them plot in the order I want
+pca_lograt_frame <- pca_lograt_frame %>%
+  mutate(SizeFraction = fct_relevel(SizeFraction, "PA", "FL")) %>%
+  mutate(OxCond = fct_relevel(OxCond, "Oxycline", "ShallowAnoxic", "Euxinic"))
+pca_lograt_frame
+
+
+
+# Plot PCA with Redox Regime and Size fraction
+pca_lograt_plot <- ggplot(pca_lograt_frame, aes(x = PC1, y = PC2, color = OxCond)) +
+  geom_point(aes(shape = SizeFraction), size = 4) +
+  ylab(paste0('PC2 ', round(lograt_variances[2,2]*100,2),'%')) + #Extract y axis value from variance
+  xlab(paste0('PC1 ', round(lograt_variances[1,2]*100,2),'%')) + #Extract x axis value from variance
+  ggtitle('CLR-Euclidean PCA') +
+  scale_color_manual(values = c("blue", "red", "brown4")) +
+  coord_fixed(ratio = 1) +
+  theme_bw()
+
+pca_lograt_plot
+```
+
+
+## Plot the PCA with environmental variables
+Use vegan's envfit to determine relationships between the ordination and environmental variables
+
+```{r}
+# trim metadata to only samples that are in PCA 
+metadata_ordinations <- metadata[metadata$`Sample Name` %in% sample_data(ps_filtered)$Sample.Name,]
+
+# sort metadata in same order as input to PCA 
+metadata_ordinations <- metadata_ordinations %>% arrange(factor(`Sample Name`, levels = rownames(clr_asv_table_ps_filtered)))
+
+# fit environmental factors and save stats output
+pca_envfit <- envfit(lograt_pca, metadata_ordinations, permutations = 1000)
+capture.output(pca_envfit, file = "PCA_envfit_stat.txt")
+```
+Many of the typical variables that indicate redox condition are significant (O2, sulfide, NO3, Particulate S, TZVS, etc). I am going to plot O2, H2S, and size fraction only to compare to prokaryotes analysis from 2018 paper
+
+
+
+Make each of the interesting variables their own ordination variables for plotting (exclude Station. This will be a color variable anyway and it's not interesting)
+```{r}
+pca_envfit_DO <- envfit(lograt_pca~O2, metadata_ordinations, permutations = 1000)
+pca_envfit_sizefraction <- envfit(lograt_pca~SizeFraction, metadata_ordinations, permutations = 1000)
+```
+
+
+Plot again, now with envfit results (can't  do ths in ggplot)
+
+```{r}
+# Rerun PCA in vegan (prcomp is equivalent to vegan function rda), incorporating the variables I want to plot
+lograt_pca <- rda(clr_asv_table_ps_filtered ~ O2+H2S+SizeFraction+OxCond,  metadata_ordinations) 
+
+# plot with ggvegan package
+autoplot(lograt_pca) 
+
+# to customize use fortify
+pca_fort <- fortify(lograt_pca, display = "sites") %>%
+bind_cols(metadata_ordinations)
+ 
+ggplot(pca_fort, aes(x = RDA1, y = RDA2, colour = OxCond, group = SizeFraction)) +
+geom_point() 
+
+
+## STOPPED HERE 7/4. CONTINUE CCUSTOMIZING. USE https://quantpalaeo.wordpress.com/2019/04/11/funky-ordination-plots-with-ggvegan/
++ 
+geom_point(aes(size = if_else(week == min(week), 1, NA_real_)), show.legend = FALSE) +
+scale_color_viridis_d() +
+scale_size(range = 2) +
+coord_equal()
+
+layers = "sites", color = factor(OxCond))
+
+
+
+#  Set up colors and shapes
+colvec <- c("blue", "red", "brown4")
+shapevec <- c(19,17) 
+
+
+
+
+
+```
+
+
 
 
 # Correlation Analyses
@@ -1552,7 +2168,7 @@ I tried many parameters on the above but cannot get a satisfactory solution. The
 
 ### Save and re-load environment
 ```{r}
-# save.image("EnvironmentBackups/CariacoEuks_postanalysis_vars_upto_spieceasi.RData")
+save.image("EnvironmentBackups/CariacoEuks_postanalysis_vars_upto_spieceasi.RData")
 ```
 
 Or load if coming back
