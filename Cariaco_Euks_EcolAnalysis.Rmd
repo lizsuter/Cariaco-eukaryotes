@@ -890,7 +890,6 @@ ggsave(filename = "Figures/shannonsplot.eps", plot = shannonsplot, units = c("in
 # Ordinations
 
 ## Filter 
-
 McMurdie and Holmes (2013) filter out taxa that were not seen with more than 3 counts in at least 20% of the samples. Also add a pseduocount of 1 to all counts. This is so that later when we do different calculations (log, division, etc) we don't get back errors due to zeroes
 ```{r}
 ps_filtered = filter_taxa(ps, function(x) sum(x > 3) > (0.2*length(x)), TRUE) 
@@ -905,37 +904,6 @@ ps_ra_filtered
 Reduced from 13,427 to 979 ASVs
 
 
-Re-root tree again incase the root was removed
-
-Lastly, reroot-the tree affiliated with the ps_filtered and ps_ra_filtered dataset, since the root may have been removed when filtering
-
-```{r}
-# first define function from link above to find furthest outgroup
-pick_new_outgroup <- function(tree.unrooted){
-require("magrittr")
-require("data.table")
-require("ape") # ape::Ntip
-# tablify parts of tree that we need.
-treeDT <- 
-     cbind(
-         data.table(tree.unrooted$edge),
-         data.table(length = tree.unrooted$edge.length)
-     )[1:Ntip(tree.unrooted)] %>% 
- cbind(data.table(id = tree.unrooted$tip.label))
- # Take the longest terminal branch as outgroup
- new.outgroup <- treeDT[which.max(length)]$id
- return(new.outgroup) }
-# then run on my phyloseq tree
-my.tree <- phy_tree(ps_filtered)
-out.group <- pick_new_outgroup(my.tree)
-out.group
-# Then use this outgroup to root the tree
-new.tree1 <- ape::root(my.tree, outgroup=out.group, resolve.root=TRUE)
-phy_tree(ps_filtered) <- new.tree1
-phy_tree(ps_ra_filtered) <- new.tree1
-# Check if tree is binary (not multichotomous)
-is.binary.tree(phy_tree(ps_filtered))
-```
 
 
 ## Test for compositionality
@@ -955,7 +923,7 @@ The determinant of the covariance matrix (what we just calculated) is equivalent
 PCA is essentially a type of PCoA  using the Euclidean distance matrix as input. When combined with a log-ratio transformation of the count table, this is deemed appropriate for *compositional* datasets.
 
 First do a **CLR, centered log ratio** transformation of the absolute abundance data (after filtering), as suggested by [Gloor et al. 2017](https://www.frontiersin.org/articles/10.3389/fmicb.2017.02224/full) and check the determinant of this matrix. Compare it to the determinant without any transformation.
-{Also commented out for now because takes a few minutes}
+
 ```{r}
 # Estimate covariance matrix for absolute abundance ASV table
 covariance_matrix <- as.matrix(otu_table(ps_filtered)) %*% t(otu_table(ps_filtered))
@@ -996,18 +964,17 @@ ggplot(lograt_variances, aes(x = as.numeric(PCaxis), y = PercVar)) +
         axis.text.x = element_blank()) +
   labs(x = "PC axis", y = "% Variance", title = "Log-Ratio PCA Screeplot, CLR Tranformation")
 ```
-First two axes explain a good proportion of variance: 24.8 + 13.4 = 38.2
+First two axes explain a decent proportion of variance: 24.8 + 13.4 = 38.2
 
 
 
 Visualize the PCA
 ```{r}
-# lograt_pca$x #View PC values
+# extract PC values
 pca_lograt_frame <- data.frame(lograt_pca$x) %>% 
   rownames_to_column(var = "Sample Name")
 # Merge metadata into the pca data table
 pca_lograt_frame <- left_join(pca_lograt_frame, metadata, by = "Sample Name")
-pca_lograt_frame
 
 
 # reorder some factors to make them plot in the order I want
@@ -1032,68 +999,215 @@ pca_lograt_plot
 ```
 
 
-## Plot the PCA with environmental variables
+### EnvFit
 Use vegan's envfit to determine relationships between the ordination and environmental variables
 
 ```{r}
-# trim metadata to only samples that are in PCA 
+# make metadata_ordinations, trimmed from metadata to only samples that are in PCA 
 metadata_ordinations <- metadata[metadata$`Sample Name` %in% sample_data(ps_filtered)$Sample.Name,]
 
-# sort metadata in same order as input to PCA 
-metadata_ordinations <- metadata_ordinations %>% arrange(factor(`Sample Name`, levels = rownames(clr_asv_table_ps_filtered)))
+# reorder some factors in metadata_ordinations to make them plot in the order I want
+metadata_ordinations <- metadata_ordinations %>%
+  mutate(SizeFraction = fct_relevel(SizeFraction, "PA", "FL")) %>%
+  mutate(OxCond = fct_relevel(OxCond, "Oxycline", "ShallowAnoxic", "Euxinic"))
+
+# sort clr_asv_table_ps_filtered in same order as metadata 
+clr_asv_table_ps_filtered <- clr_asv_table_ps_filtered[metadata_ordinations$"Sample Name",]
+
+# re-run the PCA on clr_asv_table_ps_filtered
+lograt_pca <- prcomp(clr_asv_table_ps_filtered) 
+
+
+# remove metadata that don't make sense to test (eg. NCBI sample IDs, etc.),  repetitive variables (eg. Particulate S and TZVS), and those that didn't work on both cruises (like fluorescence, beam attenuation, etc)
+metadata_ordinations <- select(metadata_ordinations, -Replicate, -Fluorescence, -BeamAtt, -TZVS, -Run, -"Assay Type", -AvgSpotLen, -Bases, -BioProject, -BioSample, -BioSampleModel, -Bytes, -"Center Name", -Collection_Date, -Consent, -"DATASTORE filetype", -"DATASTORE provider", -"DATASTORE region", -Experiment, -geo_loc_name_country, -geo_loc_name_country_continent, -geo_loc_name, -Instrument, -isolation_source, -lat_lon, -"Library Name", -LibraryLayout, -LibrarySelection, -LibrarySource, -Organism, -Platform, -ReleaseDate, -samp_collect_device, -"SRA Study", -Depth_m, -replicate, -size_fraction, -CH4_uM, -H2S_Um, -oxygen, -Oxygen_uM, -Particulate_Sulfur_uM, -salinity, -Temperature_degree_C, -TZVS_uM)
+
+# change the name of some variables to make them easier to plot
+metadata_ordinations <- rename(metadata_ordinations, PartS = ParticulateS, MicroAbun = "MicroAbun(x10^8 L^-1)",  FlagAbun = "FlagAbun(x10^5 L-1)", VLPAbun = "VLP(x10^8 L-1)")
+
 
 # fit environmental factors and save stats output
+set.seed(10010)
 pca_envfit <- envfit(lograt_pca, metadata_ordinations, permutations = 1000)
-capture.output(pca_envfit, file = "PCA_envfit_stat.txt")
+capture.output(pca_envfit, file = "stats_results/PCA_envfit_stat.txt")
+pca_envfit
+# significant vector variables, at the p<0.01 level: O2, Temp, Salinity, Particulate S, NO3, PO4, Chemoautotrophy, Flagellate Abundance
+# significant centroid variables at the p<0.01 level: OxCond and SizeFraction
+
+# fit species and save stats output
+pca_sppfit <- envfit(lograt_pca, clr_asv_table_ps_filtered, permutations = 1000)
+capture.output(pca_sppfit, file = "stats_results/PCA_sppfit_stat.txt")
+pca_sppfit
 ```
-Many of the typical variables that indicate redox condition are significant (O2, sulfide, NO3, Particulate S, TZVS, etc). I am going to plot O2, H2S, and size fraction only to compare to prokaryotes analysis from 2018 paper
+Many of the typical variables that indicate redox condition are significant (O2, NO3, Particulate S,etc), plus size fraction.
+There are many species that are sig
 
-
-
-Make each of the interesting variables their own ordination variables for plotting (exclude Station. This will be a color variable anyway and it's not interesting)
+Make individual envfit objects for all the vectors that will be plotted
 ```{r}
-pca_envfit_DO <- envfit(lograt_pca~O2, metadata_ordinations, permutations = 1000)
-pca_envfit_sizefraction <- envfit(lograt_pca~SizeFraction, metadata_ordinations, permutations = 1000)
+# vectors
+pca_envfit_O2 <- envfit(lograt_pca~O2, metadata_ordinations, permutations = 1000)
+pca_envfit_partS <- envfit(lograt_pca~PartS, metadata_ordinations, permutations = 1000)
+pca_envfit_NO3 <- envfit(lograt_pca~NO3, metadata_ordinations, permutations = 1000)
+pca_envfit_PO4 <- envfit(lograt_pca~PO4, metadata_ordinations, permutations = 1000)
+pca_envfit_temp <- envfit(lograt_pca~Temp, metadata_ordinations, permutations = 1000)
+pca_envfit_sal <- envfit(lograt_pca~Salinity, metadata_ordinations, permutations = 1000)
+pca_envfit_chemo <- envfit(lograt_pca~Chemoautotrophy, metadata_ordinations, permutations = 1000)
+pca_envfit_FlagAbun <- envfit(lograt_pca~FlagAbun, metadata_ordinations, permutations = 1000)
 ```
 
 
-Plot again, now with envfit results (can't  do ths in ggplot)
-
+Next, trim the sppfit vegan object to just include those species with r2 value greater than 0.65
+I got this function from [here](https://www.researchgate.net/post/How_do_I_set_cutoff_r_values_for_plotting_arrows_from_function_envfit_in_R).
+Later, when plotting, I can also trim by p-value/
+Use r2 cutoff of 0.65:
 ```{r}
-# Rerun PCA in vegan (prcomp is equivalent to vegan function rda), incorporating the variables I want to plot
-lograt_pca <- rda(clr_asv_table_ps_filtered ~ O2+H2S+SizeFraction+OxCond,  metadata_ordinations) 
+#__FUNCTION: select.envfit__#
+# function (select.envit) filters the resulting list of function (envfit) based on their p values. This allows to display only significant values in the final plot.
+# just run this
+select.envfit<-function(fit, r.select){ #needs two sorts of input: fit= result of envfit, r.select= numeric, correlation minimum threshold
+for (i in 1:length(fit$vectors$r)) { #run for-loop through the entire length of the column r in object fit$vectors$r starting at i=1
+if (fit$vectors$r[i]<r.select) { #Check wether r<r.select, i.e. if the correlation is weaker than the threshold value. Change this Parameter for r-based selection
+fit$vectors$arrows[i,]=NA #If the above statement is TRUE, i.e. r is smaller than r.select, then the coordinates of the vectors are set to NA, so they cannot be displayed
+i=i+1 #increase the running parameter i from 1 to 2, i.e. check the next value in the column until every value has been checked
+} #close if-loop
+} #close for-loop
+return(fit) #return fit as the result of the function
+} #close the function
 
-# plot with ggvegan package
-autoplot(lograt_pca) 
-
-# to customize use fortify
-pca_fort <- fortify(lograt_pca, display = "sites") %>%
-bind_cols(metadata_ordinations)
- 
-ggplot(pca_fort, aes(x = RDA1, y = RDA2, colour = OxCond, group = SizeFraction)) +
-geom_point() 
-
-
-## STOPPED HERE 7/4. CONTINUE CCUSTOMIZING. USE https://quantpalaeo.wordpress.com/2019/04/11/funky-ordination-plots-with-ggvegan/
-+ 
-geom_point(aes(size = if_else(week == min(week), 1, NA_real_)), show.legend = FALSE) +
-scale_color_viridis_d() +
-scale_size(range = 2) +
-coord_equal()
-
-layers = "sites", color = factor(OxCond))
+pca_sppfit_trim<-select.envfit(pca_sppfit, 0.65) 
+```
 
 
+#### Plot
+Complicated to plot vegan output in ggplot. Plot in base R
+```{r}
+# Convert characters in metadata to factors
+metadata_ordinations <- metadata_ordinations %>% mutate_if(sapply(metadata_ordinations, is.character), as.factor)
+with(as.data.frame(metadata_ordinations), levels(OxCond))
+with(as.data.frame(metadata_ordinations), levels(SizeFraction))
 
-#  Set up colors and shapes
+# Define colors and shapes for plot 
 colvec <- c("blue", "red", "brown4")
-shapevec <- c(19,17) 
+shapevec <- c(16,17)
 
 
+# Plot here in notebook
+# Set up 2x2 panels
+op <- par(oma=c(0,0,0,1),# Room for the title and legend
+  mfrow=c(2,2),
+  mai=c(.65,.65,.1,0))
+# Panel 1- Add first half of envfit vectors
+with(metadata_ordinations, plot(scores(lograt_pca, display = "sites"), col = colvec[OxCond], pch = shapevec[SizeFraction], cex = 1.5, cex.lab = .8, cex.axis = .8, xlab = "", ylab = paste0('PC2 ', round(lograt_variances[2,2]*100,2),'%'), xaxt='n'))
+plot(pca_envfit_O2, p.max = 0.1, lwd = 2, col = "black", cex = 0.6)
+plot(pca_envfit_partS, p.max = 0.1, lwd = 2, col = "black", cex = 0.6)
+plot(pca_envfit_NO3, p.max = 0.1, lwd = 2, col = "black", cex = 0.6)
+plot(pca_envfit_PO4, p.max = 0.1, lwd = 2, col = "black", cex = 0.6)
+title("A", line = -1, adj = 0.02)
+# Panel 2- Add rest of envfit vectors
+with(metadata_ordinations, plot(scores(lograt_pca, display = "sites"), col = colvec[OxCond], pch = shapevec[SizeFraction], cex = 1.5, cex.lab = .8, cex.axis = .8, xlab = "", ylab = "", xaxt='n', yaxt='n'))
+plot(pca_envfit_temp, p.max = 0.1, lwd = 2, col = "black", cex = 0.6)
+plot(pca_envfit_sal, p.max = 0.1, lwd = 2, col = "black", cex = 0.6)
+plot(pca_envfit_FlagAbun, p.max = 0.1, lwd = 2, col = "black", cex = 0.6)
+title("B", line = -1, adj = 0.02)
+# Panel 3- Add spider lines indicating envfit centroids for Size Fraction
+with(metadata_ordinations, plot(scores(lograt_pca, display = "sites"), col = colvec[OxCond], pch = shapevec[SizeFraction], cex = 1.5, cex.lab = .8, cex.axis = .8, xlab = paste0('PC1 ', round(lograt_variances[1,2]*100,2),'%'), ylab = paste0('PC2 ', round(lograt_variances[2,2]*100,2),'%')))
+with(metadata_ordinations, ordispider(lograt_pca, SizeFraction, lwd = 1.5, lty = c(1,2), label = TRUE, cex = 0.6))
+title("C", line = -1, adj = 0.02)
+# Panel 4 -Add vectors indicating significant spp
+with(metadata_ordinations, plot(scores(lograt_pca, display = "sites"), col = colvec[OxCond], pch = shapevec[SizeFraction], cex = 1.5, cex.lab = .8, cex.axis = .8, xlab = paste0('PC1 ', round(lograt_variances[1,2]*100,2),'%'), ylab = "", yaxt='n'))
+plot(pca_sppfit_trim, p.max = 0.001, col = "black", cex = 0.6)
+# annotate the 3 clusters of ASVs in panel D
+text(x=c(0), y=c(45), labels=c("Cluster I"), adj = 0.5, font = 2, cex = 0.8)
+text(x=c(50), y=c(30), labels=c("Cluster II"), adj = 0.5, font = 2, cex = 0.8)
+text(x=c(48), y=c(-35), labels=c("Cluster III"), adj = 0.5, font = 2, cex = 0.8)
+title("D", line = -1, adj = 0.02)
+# Add legend
+par(op) # Leave the last plot
+op <- par(usr=c(0,1,0,1), # Reset the coordinates
+          xpd=NA)         # Allow plotting outside the plot region
+legend(-0.018,.57, c("PA", "FL", "Oxycline", "Shallow Anoxic", "Euxinic"), col=c("black", "black","blue", "red", "brown4"), pch = c(16, 17, 15, 15, 15), box.col=NA, cex = .8, horiz = T, x.intersp = c(0.3), text.width = c(0, 0.18, 0.18, 0.18, 0.2))
 
 
+# Set up EPS and make plot
+setEPS(width = 6, height = 6)
+postscript("Figures/PCA_envfit.eps")
+# Set up 2x2 panels
+op <- par(oma=c(0,0,0,1),# Room for the title and legend
+  mfrow=c(2,2),
+  mai=c(.65,.65,.1,0))
+# Panel 1- Add first half of envfit vectors
+with(metadata_ordinations, plot(scores(lograt_pca, display = "sites"), col = colvec[OxCond], pch = shapevec[SizeFraction], cex = 1.5, cex.lab = .8, cex.axis = .8, xlab = "", ylab = paste0('PC2 ', round(lograt_variances[2,2]*100,2),'%'), xaxt='n'))
+plot(pca_envfit_O2, p.max = 0.1, lwd = 2, col = "black", cex = 0.6)
+plot(pca_envfit_partS, p.max = 0.1, lwd = 2, col = "black", cex = 0.6)
+plot(pca_envfit_NO3, p.max = 0.1, lwd = 2, col = "black", cex = 0.6)
+plot(pca_envfit_PO4, p.max = 0.1, lwd = 2, col = "black", cex = 0.6)
+title("A", line = -1, adj = 0.02)
+# Panel 2- Add rest of envfit vectors
+with(metadata_ordinations, plot(scores(lograt_pca, display = "sites"), col = colvec[OxCond], pch = shapevec[SizeFraction], cex = 1.5, cex.lab = .8, cex.axis = .8, xlab = "", ylab = "", xaxt='n', yaxt='n'))
+plot(pca_envfit_temp, p.max = 0.1, lwd = 2, col = "black", cex = 0.6)
+plot(pca_envfit_sal, p.max = 0.1, lwd = 2, col = "black", cex = 0.6)
+plot(pca_envfit_FlagAbun, p.max = 0.1, lwd = 2, col = "black", cex = 0.6)
+title("B", line = -1, adj = 0.02)
+# Panel 3- Add spider lines indicating envfit centroids for Size Fraction
+with(metadata_ordinations, plot(scores(lograt_pca, display = "sites"), col = colvec[OxCond], pch = shapevec[SizeFraction], cex = 1.5, cex.lab = .8, cex.axis = .8, xlab = paste0('PC1 ', round(lograt_variances[1,2]*100,2),'%'), ylab = paste0('PC2 ', round(lograt_variances[2,2]*100,2),'%')))
+with(metadata_ordinations, ordispider(lograt_pca, SizeFraction, lwd = 1.5, lty = c(1,2), label = TRUE, cex = 0.6))
+title("C", line = -1, adj = 0.02)
+# Panel 4 -Add vectors indicating significant spp
+with(metadata_ordinations, plot(scores(lograt_pca, display = "sites"), col = colvec[OxCond], pch = shapevec[SizeFraction], cex = 1.5, cex.lab = .8, cex.axis = .8, xlab = paste0('PC1 ', round(lograt_variances[1,2]*100,2),'%'), ylab = "", yaxt='n'))
+plot(pca_sppfit_trim, p.max = 0.001, col = "black", cex = 0.6)
+# annotate the 3 clusters of ASVs in panel D
+text(x=c(0), y=c(45), labels=c("Cluster I"), adj = 0.5, font = 2, cex = 0.8)
+text(x=c(50), y=c(30), labels=c("Cluster II"), adj = 0.5, font = 2, cex = 0.8)
+text(x=c(48), y=c(-35), labels=c("Cluster III"), adj = 0.5, font = 2, cex = 0.8)
+title("D", line = -1, adj = 0.02)
+# Add legend
+par(op) # Leave the last plot
+op <- par(usr=c(0,1,0,1), # Reset the coordinates
+          xpd=NA)         # Allow plotting outside the plot region
+legend(-0.018,.57, c("PA", "FL", "Oxycline", "Shallow Anoxic", "Euxinic"), col=c("black", "black","blue", "red", "brown4"), pch = c(16, 17, 15, 15, 15), box.col=NA, cex = .8, horiz = T, x.intersp = c(0.3), text.width = c(0, 0.18, 0.18, 0.18, 0.2))
+dev.off()
 
 ```
+
+For the manuscript, I want to discuss what these significant species are. Make a table:
+```{r}
+# extract p-values for each species
+fit_pvals <- pca_sppfit$vectors$pvals %>% 
+  as.data.frame() %>% 
+  rownames_to_column("ASVID") %>% 
+  dplyr::rename("pvals" = ".")
+
+# extract r2 values
+fit_r2vals <- pca_sppfit$vectors$r %>% 
+  as.data.frame() %>% 
+  rownames_to_column("ASVID") %>% 
+  dplyr::rename("r2vals" = ".")
+
+# only keep species with p-val < 0.001 and r2 value >0.65
+fit_spp <- pca_sppfit %>% 
+  scores(., display = "vectors") %>% 
+  as.data.frame() %>% 
+  rownames_to_column("ASVID") %>% 
+  full_join(., fit_pvals, by = "ASVID") %>% 
+  full_join(., fit_r2vals, by = "ASVID") %>% 
+  filter(pvals < 0.001) %>%
+  filter(r2vals > 0.65) 
+# --> filters to 64 species
+
+# put in ASV identifying information
+pca_sig_ASVs <- taxonomy %>% 
+  mutate(ASVID = rownames(taxonomy)) %>% 
+  right_join(fit_spp, by = "ASVID") 
+
+# sort by PC2 to differentiate those above and below the PC2= 0 axis
+pca_sig_ASVs <- pca_sig_ASVs %>%
+ arrange(desc(PC2))
+
+pca_sig_ASVs
+
+# export as table
+write.csv(pca_sig_ASVs, file="stats_results/pca_sig_ASVs.csv", row.names=FALSE)
+```
+
 
 
 
@@ -2168,7 +2282,7 @@ I tried many parameters on the above but cannot get a satisfactory solution. The
 
 ### Save and re-load environment
 ```{r}
-save.image("EnvironmentBackups/CariacoEuks_postanalysis_vars_upto_spieceasi.RData")
+# save.image("EnvironmentBackups/CariacoEuks_postanalysis_vars_upto_spieceasi.RData")
 ```
 
 Or load if coming back
@@ -2202,10 +2316,6 @@ V(grph)$name <- rownames(alldomains_df)
 # Make size of nodes proportional to degree (number of connections)
 V(grph)$size <- (degree(grph) + 1) # the +1 avoids size zero vertices
 
-# Color edges by connection (positive or negative) 
-# E(grph)$color <- custombluegreen
-# E(grph)$color[E(grph)$weight<0] <- customreddishpurple
-
 # Change width of edges to be proportional to their weights
 E(grph)$width <- abs(E(grph)$weight)*10
 
@@ -2216,18 +2326,53 @@ V(grph)$size <- V(grph)$size/2
 # weight_threshold <- 0.07
 # grph <- delete.edges(grph,which(abs(E(grph)$weight)<weight_threshold))
 
-# Color nodes by domain
-dtype <- c(rep("red",ntaxa(ps_bac_pruned_3domains)), rep("green",ntaxa(ps_arch_pruned_3domains)), rep("blue",ntaxa(ps_euk_pruned_3domains)))
+# Join taxonomy data of each node
+# Convert graph to datafram
+grph_df <- igraph::as_data_frame(grph, 'both')
+# make formatted taxonomy table for each domain
+ps_bac_pruned_tax_table <- as.data.frame(tax_table(ps_bac_pruned)) %>%
+  mutate(name = rownames(tax_table(ps_bac_pruned)))
+ps_arch_pruned_tax_table <- as.data.frame(tax_table(ps_arch_pruned)) %>%
+  mutate(name = rownames(tax_table(ps_arch_pruned)))
+ps_euk_pruned_tax_table <- as.data.frame(tax_table(ps_euk_pruned)) %>%
+  mutate(name = rownames(tax_table(ps_euk_pruned)))
+# link graph data frame to formatted taxonomy tables
+bac_temp <- left_join(grph_df$vertices[1:ntaxa(ps_bac_pruned),],
+ps_bac_pruned_tax_table, by = "name")
+  # delete columns that don't match other tax tables
+  bac_temp <- select(bac_temp, -"taxonomy-9", -"Refined taxonomy")
+arch_temp <- left_join(grph_df$vertices[ntaxa(ps_bac_pruned)+1:ntaxa(ps_arch_pruned),],
+ps_arch_pruned_tax_table, by = "name")
+euk_temp <- left_join(grph_df$vertices[ntaxa(ps_bac_pruned)+ntaxa(ps_arch_pruned)+1:ntaxa(ps_euk_pruned),],
+ps_euk_pruned_tax_table, by = "name")
+  # rename column names in euk table to match others
+  euk_temp <- euk_temp %>%
+    rename("taxonomy-1" = Kingdom, "taxonomy-2" = Supergroup, "taxonomy-3" = Division, "taxonomy-4" = Class, "taxonomy-5" = Order, "taxonomy-6" = Family, "taxonomy-7" = Genus, "taxonomy-8" = Species)
+# build full dataframe with all 3 domains
+all_temp <- rbind(bac_temp, arch_temp, euk_temp)
+# remake into graph
+grph <- graph_from_data_frame(grph_df$edges,
+                                   directed = F,
+                                   vertices = all_temp)
+
+# Make color palette for domain
+dtype = c("red", "green", "blue", "yellow")
+# Make color vector
+domain_color <- dtype[as.numeric(as.factor(V(grph)$"taxonomy-1"))]
+# check
+domain_color
+as.factor(V(grph)$"taxonomy-1")
+
 
 # Plot
 plot(grph,
      vertex.label=NA,
      layout=layout_with_graphopt(grph),
-     vertex.color=dtype)
+     vertex.color=domain_color)
 title("SpiecEasi Network: All domains, Whole Water Column")
 legend("topright",bty = "n",
-       legend=c("Bacteria","Archaea", "Eukarya"),
-       fill=c("red","green","blue"), border=NA)
+       legend=c("Archaea","Bacteria", "Eukarya", "No Blast Hit"),
+       fill=c("red", "green", "blue", "yellow"), border=NA)
 
 # Save plot
 setEPS()
@@ -2235,16 +2380,79 @@ postscript(file = "Figures/3domains_alldepths_spieceasi_network.eps", width = 5.
 plot(grph,
      vertex.label=NA,
      layout=layout_with_graphopt(grph),
-     vertex.color=dtype)
+     vertex.color=domain_color)
 title("SpiecEasi Network: All domains, Whole Water Column")
+legend("topright",bty = "n",
+       legend=c("Archaea","Bacteria", "Eukarya", "No Blast Hit"),
+       fill=c("red", "green", "blue", "yellow"), border=NA)
+dev.off()
+```
+
+#### Positive and negative edges separately
+```{r}
+# Subset based on pos or neg edges
+grph.pos <-delete.edges(grph, which(E(grph)$weight<0))
+grph.neg <-delete.edges(grph, which(E(grph)$weight>0))
+
+# For each subsetted graph, remove those nodes that are no longer connected to anything
+grph.pos <- delete.vertices(grph.pos, which(degree(grph.pos)==0))
+grph.neg <- delete.vertices(grph.neg, which(degree(grph.neg)==0))
+
+# Make color vector for each
+domain_color_pos <- dtype[as.numeric(as.factor(V(grph.pos)$"taxonomy-1"))]
+domain_color_neg <- dtype[as.numeric(as.factor(V(grph.neg)$"taxonomy-1"))]
+
+# Plot pos
+plot(grph.pos,
+     vertex.label=NA,
+     layout=layout_with_graphopt(grph.pos),
+     vertex.color=domain_color_pos)
+title("SpiecEasi Network: All domains, Positive Edges, Whole Water Column")
+legend("topright",bty = "n",
+       legend=c("Archaea","Bacteria", "Eukarya", "No Blast Hit"),
+       fill=c("red", "green", "blue", "yellow"), border=NA)
+
+# Plot neg
+plot(grph.neg,
+     vertex.label=NA,
+     layout=layout_with_graphopt(grph.neg),
+     vertex.color=domain_color_neg)
+title("SpiecEasi Network: All domains, Negative Edges, Whole Water Column")
+legend("topright",bty = "n",
+       legend=c("Archaea","Bacteria", "Eukarya", "No Blast Hit"),
+       fill=c("red", "green", "blue", "yellow"), border=NA)
+
+
+# Save plots
+setEPS()
+postscript(file = "Figures/3domains_alldepths_posedges_spieceasi_network.eps", width = 5.5, height = 5)
+plot(grph.pos,
+     vertex.label=NA,
+     layout=layout_with_graphopt(grph.pos),
+     vertex.color=domain_color_pos)
+title("SpiecEasi Network: All domains, Positive Edges, Whole Water Column")
 legend("topright",bty = "n",
        legend=c("Bacteria","Archaea", "Eukarya"),
        fill=c("red","green","blue"), border=NA)
+dev.off()
+
+setEPS()
+postscript(file = "Figures/3domains_alldepths_negedges_spieceasi_network.eps", width = 5.5, height = 5)
+plot(grph.neg,
+     vertex.label=NA,
+     layout=layout_with_graphopt(grph.neg),
+     vertex.color=domain_color_neg)
+title("SpiecEasi Network: All domains, Negative Edges, Whole Water Column")
+legend("topright",bty = "n",
+       legend=c("Archaea","Bacteria", "Eukarya", "No Blast Hit"),
+       fill=c("red", "green", "blue", "yellow"), border=NA)
+
 dev.off()
 ```
 
 
 ### 2 Domain Network- All depths
+Remove eukaryotes to see impact on network
 ```{r}
 #Extract adjacency matrix from spiecEasi output
 adj.mat <- getRefit(se.2domains)
@@ -2280,18 +2488,42 @@ V(grph.2domains)$size <- V(grph.2domains)$size/2
 # weight_threshold <- 0.07
 # grph.2domains <- delete.edges(grph.2domains,which(abs(E(grph.2domains)$weight)<weight_threshold))
 
-# Color nodes by domain
-dtype <- c(rep("red",ntaxa(ps_bac_pruned_2domains)), rep("green",ntaxa(ps_arch_pruned_2domains)))
+# Join taxonomy data of each node
+# Convert graph to datafram
+grph.2domains_df <- igraph::as_data_frame(grph.2domains, 'both')
+# make formatted taxonomy table for each domain
+ps_bac_pruned_2domains_tax_table <- as.data.frame(tax_table(ps_bac_pruned_2domains)) %>%
+  mutate(name = rownames(tax_table(ps_bac_pruned_2domains)))
+ps_arch_2domains_pruned_tax_table <- as.data.frame(tax_table(ps_arch_pruned_2domains)) %>%
+  mutate(name = rownames(tax_table(ps_arch_pruned_2domains)))
+# link graph data frame to formatted taxonomy tables
+bac_temp <- left_join(grph.2domains_df$vertices[1:ntaxa(ps_bac_pruned_2domains),],
+ps_bac_pruned_2domains_tax_table, by = "name")
+  # delete columns that don't match other tax tables
+  bac_temp <- select(bac_temp, -"taxonomy-9", -"Refined taxonomy")
+arch_temp <- left_join(grph.2domains_df$vertices[ntaxa(ps_bac_pruned_2domains)+1:ntaxa(ps_arch_pruned_2domains),], ps_arch_2domains_pruned_tax_table, by = "name")
+# build full dataframe with all 3 domains
+all_temp <- rbind(bac_temp, arch_temp)
+# remake into graph
+grph.2domains <- graph_from_data_frame(grph.2domains_df$edges,
+                                   directed = F,
+                                   vertices = all_temp)
+
+# Make color paletter for domain
+dtype = c("red", "green", "yellow")
+
+# Make color vector
+domain_color_2domains <- dtype[as.numeric(as.factor(V(grph.2domains)$"taxonomy-1"))]
 
 # Plot
 plot(grph.2domains,
      vertex.label=NA,
      layout=layout_with_graphopt(grph.2domains),
-     vertex.color=dtype)
+     vertex.color=domain_color_2domains)
 title("SpiecEasi Network: Bacteria and Archaea, Whole Water Column")
 legend("topright",bty = "n",
-       legend=c("Bacteria","Archaea"),
-       fill=c("red","green"), border=NA)
+       legend=c("Archaea","Bacteria", "No blast hit"),
+       fill=c("red","green", "yellow"), border=NA)
 
 # Save plot
 setEPS()
@@ -2299,13 +2531,78 @@ postscript(file = "Figures/2domains_alldepths_spieceasi_network.eps", width = 5.
 plot(grph.2domains,
      vertex.label=NA,
      layout=layout_with_graphopt(grph.2domains),
-     vertex.color=dtype)
+     vertex.color=domain_color_2domains)
 title("SpiecEasi Network: Bacteria and Archaea, Whole Water Column")
 legend("topright",bty = "n",
-       legend=c("Bacteria","Archaea"),
-       fill=c("red","green"), border=NA)
+       legend=c("Archaea","Bacteria", "No blast hit"),
+       fill=c("red","green", "yellow"), border=NA)
 dev.off()
 ```
+
+
+#### Positive and negative edges separately
+```{r}
+# Subset based on pos or neg edges
+grph.2domains.pos <-delete.edges(grph.2domains, which(E(grph.2domains)$weight<0))
+grph.2domains.neg <-delete.edges(grph.2domains, which(E(grph.2domains)$weight>0))
+
+# For each subsetted graph, remove those nodes that are no longer connected to anything
+grph.2domains.pos <- delete.vertices(grph.2domains.pos, which(degree(grph.2domains.pos)==0))
+grph.2domains.neg <- delete.vertices(grph.2domains.neg, which(degree(grph.2domains.neg)==0))
+
+# Make color vector for each
+domain_color_2domains_pos <- dtype[as.numeric(as.factor(V(grph.2domains.pos)$"taxonomy-1"))]
+domain_color_2domains_neg <- dtype[as.numeric(as.factor(V(grph.2domains.neg)$"taxonomy-1"))]
+
+# Plot pos
+plot(grph.2domains.pos,
+     vertex.label=NA,
+     layout=layout_with_graphopt(grph.2domains.pos),
+     vertex.color=domain_color_2domains_pos)
+title("SpiecEasi Network: Bacteria and Archaea, Positive Edges Only, Whole Water Column")
+legend("topright",bty = "n",
+       legend=c("Archaea","Bacteria", "No Blast Hit"),
+       fill=c("green","red","yellow"), border=NA)
+
+# Plot neg
+plot(grph.2domains.neg,
+     vertex.label=NA,
+     layout=layout_with_graphopt(grph.2domains.neg),
+     vertex.color=domain_color_2domains_neg)
+title("SpiecEasi Network: Bacteria and Archaea, Negative Edges Only, Whole Water Column")
+legend("topright",bty = "n",
+       legend=c("Archaea","Bacteria", "No Blast Hit"),
+       fill=c("green","red","yellow"), border=NA)
+
+
+# Save plots
+setEPS()
+postscript(file = "Figures/2domains_alldepths_posedges_spieceasi_network.eps", width = 5.5, height = 5)
+plot(grph.2domains.pos,
+     vertex.label=NA,
+     layout=layout_with_graphopt(grph.2domains.pos),
+     vertex.color=domain_color_2domains_pos)
+title("SpiecEasi Network: Bacteria and Archaea, Positive Edges Only, Whole Water Column")
+legend("topright",bty = "n",
+       legend=c("Archaea","Bacteria", "No Blast Hit"),
+       fill=c("green","red","yellow"), border=NA)
+dev.off()
+
+setEPS()
+postscript(file = "Figures/2domains_alldepths_negedges_spieceasi_network.eps", width = 5.5, height = 5)
+plot(grph.2domains.neg,
+     vertex.label=NA,
+     layout=layout_with_graphopt(grph.2domains.neg),
+     vertex.color=domain_color_2domains_neg)
+title("SpiecEasi Network: Bacteria and Archaea, Negative Edges Only, Whole Water Column")
+legend("topright",bty = "n",
+        legend=c("Archaea","Bacteria", "No Blast Hit"),
+       fill=c("green","red","yellow"), border=NA)
+dev.off()
+```
+
+
+
 
 
 ### 3 Domain Network- Oxycline
@@ -2344,17 +2641,47 @@ V(grph.oxycline)$size <- V(grph.oxycline)$size/2
 # weight_threshold <- 0.07
 # grph.oxycline <- delete.edges(grph.oxycline,which(abs(E(grph.oxycline)$weight)<weight_threshold))
 
-# Color nodes by domain
-dtype <- c(rep("red",ntaxa(ps_bac_oxycline_pruned)), rep("green",ntaxa(ps_arch_oxycline_pruned)), rep("blue",ntaxa(ps_euk_oxycline_pruned)))
+# Join taxonomy data of each node
+# Convert graph to datafram
+grph.oxycline_df <- igraph::as_data_frame(grph.oxycline, 'both')
+# make formatted taxonomy table for each domain
+ps_bac_oxycline_pruned_tax_table <- as.data.frame(tax_table(ps_bac_oxycline_pruned)) %>%
+  mutate(name = rownames(tax_table(ps_bac_oxycline_pruned)))
+ps_arch_oxycline_pruned_tax_table <- as.data.frame(tax_table(ps_arch_oxycline_pruned)) %>%
+  mutate(name = rownames(tax_table(ps_arch_oxycline_pruned)))
+ps_euk_oxycline_pruned_tax_table <- as.data.frame(tax_table(ps_euk_oxycline_pruned)) %>%
+  mutate(name = rownames(tax_table(ps_euk_oxycline_pruned)))
+# link graph data frame to formatted taxonomy tables
+bac_temp <- left_join(grph.oxycline_df$vertices[1:ntaxa(ps_bac_oxycline_pruned),],
+ps_bac_oxycline_pruned_tax_table, by = "name")
+  # delete columns that don't match other tax tables
+  bac_temp <- select(bac_temp, -"taxonomy-9", -"Refined taxonomy")
+arch_temp <- left_join(grph.oxycline_df$vertices[ntaxa(ps_bac_oxycline_pruned)+1:ntaxa(ps_arch_oxycline_pruned),],ps_arch_oxycline_pruned_tax_table, by = "name")
+euk_temp <- left_join(grph.oxycline_df$vertices[ntaxa(ps_bac_oxycline_pruned)+ntaxa(ps_arch_oxycline_pruned)+1:ntaxa(ps_euk_oxycline_pruned),], ps_euk_oxycline_pruned_tax_table, by = "name")
+  # rename column names in euk table to match others
+  euk_temp <- euk_temp %>%
+    rename("taxonomy-1" = Kingdom, "taxonomy-2" = Supergroup, "taxonomy-3" = Division, "taxonomy-4" = Class, "taxonomy-5" = Order, "taxonomy-6" = Family, "taxonomy-7" = Genus, "taxonomy-8" = Species)
+# build full dataframe with all 3 domains
+all_temp <- rbind(bac_temp, arch_temp, euk_temp)
+# remake into graph
+grph.oxycline <- graph_from_data_frame(grph.oxycline_df$edges,
+                                   directed = F,
+                                   vertices = all_temp)
+
+# Make color paletter for domain
+dtype = c("red", "green", "blue")
+# Make color vector
+domain_color_oxycline <- dtype[as.numeric(as.factor(V(grph.oxycline)$"taxonomy-1"))]
+
 
 # Plot
 plot(grph.oxycline,
      vertex.label=NA,
      layout=layout_with_graphopt(grph.oxycline),
-     vertex.color=dtype)
+     vertex.color=domain_color_oxycline)
 title("SpiecEasi Network: All domains, Oxycline")
 legend("topright",bty = "n",
-       legend=c("Bacteria","Archaea", "Eukarya"),
+       legend=c("Archaea", "Bacteria", "Eukarya"),
        fill=c("red","green","blue"), border=NA)
 
 # Save plot
@@ -2363,13 +2690,83 @@ postscript(file = "Figures/3domains_oxycline_spieceasi_network.eps", width = 5.5
 plot(grph.oxycline,
      vertex.label=NA,
      layout=layout_with_graphopt(grph.oxycline),
-     vertex.color=dtype)
+     vertex.color=domain_color_oxycline)
 title("SpiecEasi Network: All domains, Oxycline")
 legend("topright",bty = "n",
-       legend=c("Bacteria","Archaea", "Eukarya"),
+       legend=c("Archaea", "Bacteria", "Eukarya"),
        fill=c("red","green","blue"), border=NA)
 dev.off()
 ```
+
+
+
+#### Positive and negative edges separately
+```{r}
+# Subset based on pos or neg edges
+grph.oxycline.pos <-delete.edges(grph.oxycline, which(E(grph.oxycline)$weight<0))
+grph.oxycline.neg <-delete.edges(grph.oxycline, which(E(grph.oxycline)$weight>0))
+
+# For each subsetted graph, remove those nodes that are no longer connected to anything
+grph.oxycline.pos <- delete.vertices(grph.oxycline.pos, which(degree(grph.oxycline.pos)==0))
+grph.oxycline.neg <- delete.vertices(grph.oxycline.neg, which(degree(grph.oxycline.neg)==0))
+
+# Make color vector for each
+domain_color_oxycline_pos <- dtype[as.numeric(as.factor(V(grph.oxycline.pos)$"taxonomy-1"))]
+domain_color_oxycline_neg <- dtype[as.numeric(as.factor(V(grph.oxycline.neg)$"taxonomy-1"))]
+
+# Plot pos
+plot(grph.oxycline.pos,
+     vertex.label=NA,
+     layout=layout_with_graphopt(grph.oxycline.pos),
+     vertex.color=domain_color_oxycline_pos)
+title("SpiecEasi Network: All domains, Positive Edges only, Oxycline")
+legend("topright",bty = "n",
+       legend=c("Archaea", "Bacteria", "Eukarya"),
+       fill=c("red","green","blue"), border=NA)
+
+# Plot neg
+plot(grph.oxycline.neg,
+     vertex.label=NA,
+     layout=layout_with_graphopt(grph.oxycline.neg),
+     vertex.color=domain_color_oxycline_neg)
+title("SpiecEasi Network: All domains, Negative Edges Only, Oxycline")
+legend("topright",bty = "n",
+       legend=c("Archaea", "Bacteria", "Eukarya"),
+       fill=c("red","green","blue"), border=NA)
+
+
+# Save plots
+setEPS()
+postscript(file = "Figures/3domains_oxycline_posedges_spieceasi_network.eps", width = 5.5, height = 5)
+plot(grph.oxycline.pos,
+     vertex.label=NA,
+     layout=layout_with_graphopt(grph.oxycline.pos),
+     vertex.color=domain_color_oxycline_pos)
+title("SpiecEasi Network: All domains, Positive Edges Only, Oxycline")
+legend("topright",bty = "n",
+       legend=c("Archaea", "Bacteria", "Eukarya"),
+       fill=c("red","green","blue"), border=NA)
+dev.off()
+
+setEPS()
+postscript(file = "Figures/3domains_oxycline_negedges_spieceasi_network.eps", width = 5.5, height = 5)
+plot(grph.oxycline.neg,
+     vertex.label=NA,
+     layout=layout_with_graphopt(grph.oxycline.neg),
+     vertex.color=domain_color_oxycline_neg)
+title("SpiecEasi Network: All domains, Negative Edges Only, Oxycline")
+legend("topright",bty = "n",
+       legend=c("Archaea", "Bacteria", "Eukarya"),
+       fill=c("red","green","blue"), border=NA)
+
+dev.off()
+```
+
+
+
+
+
+
 
 ### 3 Domain Network- Anoxic
 ```{r}
@@ -2390,6 +2787,7 @@ grph.anoxic <- adj2igraph(weighted.adj.mat)
 V(grph.anoxic)$name <- rownames(alldomains_df_anoxic)
 # V(grph.anoxic)
 
+
 # Make size of nodes proportional to degree (number of connections)
 V(grph.anoxic)$size <- (degree(grph.anoxic) + 1) # the +1 avoids size zero vertices
 
@@ -2407,17 +2805,45 @@ V(grph.anoxic)$size <- V(grph.anoxic)$size/2
 # weight_threshold <- 0.07
 # grph.anoxic <- delete.edges(grph.anoxic,which(abs(E(grph.anoxic)$weight)<weight_threshold))
 
-# Color nodes by domain
-dtype <- c(rep("red",ntaxa(ps_bac_anoxic_pruned)), rep("green",ntaxa(ps_arch_anoxic_pruned)), rep("blue",ntaxa(ps_euk_anoxic_pruned)))
+# Join taxonomy data of each node
+# Convert graph to datafram
+grph.anoxic_df <- igraph::as_data_frame(grph.anoxic, 'both')
+# make formatted taxonomy table for each domain
+ps_bac_anoxic_pruned_tax_table <- as.data.frame(tax_table(ps_bac_anoxic_pruned)) %>%
+  mutate(name = rownames(tax_table(ps_bac_anoxic_pruned)))
+ps_arch_anoxic_pruned_tax_table <- as.data.frame(tax_table(ps_arch_anoxic_pruned)) %>%
+  mutate(name = rownames(tax_table(ps_arch_anoxic_pruned)))
+ps_euk_anoxic_pruned_tax_table <- as.data.frame(tax_table(ps_euk_anoxic_pruned)) %>%
+  mutate(name = rownames(tax_table(ps_euk_anoxic_pruned)))
+# link graph data frame to formatted taxonomy tables
+bac_temp <- left_join(grph.anoxic_df$vertices[1:ntaxa(ps_bac_anoxic_pruned),],ps_bac_anoxic_pruned_tax_table, by = "name")
+  # delete columns that don't match other tax tables
+  bac_temp <- select(bac_temp, -"taxonomy-9", -"Refined taxonomy")
+arch_temp <- left_join(grph.anoxic_df$vertices[ntaxa(ps_bac_anoxic_pruned)+1:ntaxa(ps_arch_anoxic_pruned),],ps_arch_anoxic_pruned_tax_table, by = "name")
+euk_temp <- left_join(grph.anoxic_df$vertices[ntaxa(ps_bac_anoxic_pruned)+ntaxa(ps_arch_anoxic_pruned)+1:ntaxa(ps_euk_anoxic_pruned),], ps_euk_anoxic_pruned_tax_table, by = "name")
+  # rename column names in euk table to match others
+  euk_temp <- euk_temp %>%
+    rename("taxonomy-1" = Kingdom, "taxonomy-2" = Supergroup, "taxonomy-3" = Division, "taxonomy-4" = Class, "taxonomy-5" = Order, "taxonomy-6" = Family, "taxonomy-7" = Genus, "taxonomy-8" = Species)
+# build full dataframe with all 3 domains
+all_temp <- rbind(bac_temp, arch_temp, euk_temp)
+# remake into graph
+grph.anoxic <- graph_from_data_frame(grph.anoxic_df$edges,
+                                   directed = F,
+                                   vertices = all_temp)
+
+# Make color paletter for domain
+dtype = c("red", "green", "blue")
+# Make color vector
+domain_color_anoxic <- dtype[as.numeric(as.factor(V(grph.anoxic)$"taxonomy-1"))]
 
 # Plot
 plot(grph.anoxic,
      vertex.label=NA,
      layout=layout_with_graphopt(grph.anoxic),
-     vertex.color=dtype)
+     vertex.color=domain_color_anoxic)
 title("SpiecEasi Network: All domains, Anoxic Layer")
 legend("topright",bty = "n",
-       legend=c("Bacteria","Archaea", "Eukarya"),
+       legend=c("Archaea", "Bacteria", "Eukarya"),
        fill=c("red","green","blue"), border=NA)
 
 # Save plot
@@ -2426,13 +2852,184 @@ postscript(file = "Figures/3domains_anoxic_spieceasi_network.eps", width = 5.5, 
 plot(grph.anoxic,
      vertex.label=NA,
      layout=layout_with_graphopt(grph.anoxic),
-     vertex.color=dtype)
+     vertex.color=domain_color_anoxic)
 title("SpiecEasi Network: All domains, Anoxic")
 legend("topright",bty = "n",
-       legend=c("Bacteria","Archaea", "Eukarya"),
+       legend=c("Archaea", "Bacteria", "Eukarya"),
        fill=c("red","green","blue"), border=NA)
 dev.off()
 ```
+
+
+#### Positive and negative edges separately
+
+```{r}
+# Subset based on pos or neg edges
+grph.anoxic.pos <-delete.edges(grph.anoxic, which(E(grph.anoxic)$weight<0))
+grph.anoxic.neg <-delete.edges(grph.anoxic, which(E(grph.anoxic)$weight>0))
+
+# For each subsetted graph, remove those nodes that are no longer connected to anything
+grph.anoxic.pos <- delete.vertices(grph.anoxic.pos, which(degree(grph.anoxic.pos)==0))
+grph.anoxic.neg <- delete.vertices(grph.anoxic.neg, which(degree(grph.anoxic.neg)==0))
+
+# Make color vector for each
+domain_color_anoxic_pos <- dtype[as.numeric(as.factor(V(grph.anoxic.pos)$"taxonomy-1"))]
+domain_color_anoxic_neg <- dtype[as.numeric(as.factor(V(grph.anoxic.neg)$"taxonomy-1"))]
+
+# Plot pos
+plot(grph.anoxic.pos,
+     vertex.label=NA,
+     layout=layout_with_graphopt(grph.anoxic.pos),
+     vertex.color=domain_color_anoxic_pos)
+title("SpiecEasi Network: All domains, Positive Edges only, anoxic")
+legend("topright",bty = "n",
+       legend=c("Archaea", "Bacteria", "Eukarya"),
+       fill=c("red","green","blue"), border=NA)
+
+# Plot neg
+plot(grph.anoxic.neg,
+     vertex.label=NA,
+     layout=layout_with_graphopt(grph.anoxic.neg),
+     vertex.color=domain_color_anoxic_neg)
+title("SpiecEasi Network: All domains, Negative Edges Only, anoxic")
+legend("topright",bty = "n",
+       legend=c("Archaea", "Bacteria", "Eukarya"),
+       fill=c("red","green","blue"), border=NA)
+
+
+# Save plots
+setEPS()
+postscript(file = "Figures/3domains_anoxic_posedges_spieceasi_network.eps", width = 5.5, height = 5)
+plot(grph.anoxic.pos,
+     vertex.label=NA,
+     layout=layout_with_graphopt(grph.anoxic.pos),
+     vertex.color=domain_color_anoxic_pos)
+title("SpiecEasi Network: All domains, Positive Edges Only, Shallow Anoxic")
+legend("topright",bty = "n",
+       legend=c("Archaea", "Bacteria", "Eukarya"),
+       fill=c("red","green","blue"), border=NA)
+dev.off()
+
+setEPS()
+postscript(file = "Figures/3domains_anoxic_negedges_spieceasi_network.eps", width = 5.5, height = 5)
+plot(grph.anoxic.neg,
+     vertex.label=NA,
+     layout=layout_with_graphopt(grph.anoxic.neg),
+     vertex.color=domain_color_anoxic_neg)
+title("SpiecEasi Network: All domains, Negative Edges Only, Shallow Anoxic")
+legend("topright",bty = "n",
+       legend=c("Archaea", "Bacteria", "Eukarya"),
+       fill=c("red","green","blue"), border=NA)
+dev.off()
+```
+
+
+### Summary Network figure
+
+```{r}
+# Set up in panels
+op <- par(oma=c(0,.5,.5,0),# Room for the titles and legend
+  mfrow=c(3,2),
+  mai=c(.3,.3,.3,.3))
+# Panel 1- All depths, positive network
+plot(grph.pos,
+     vertex.label=NA,
+     layout=layout_with_graphopt(grph.pos),
+     vertex.color=domain_color_pos)
+mtext ("Positive", side = 3, outer = TRUE, line = -1, adj = 0.22, cex = .8)
+mtext("All depths", side=2, cex = .8, line = 1.5)
+# Panel 2- All depths, negative network
+plot(grph.neg,
+     vertex.label=NA,
+     layout=layout_with_graphopt(grph.neg),
+     vertex.color=domain_color_neg)
+mtext ("Negative", side = 3, outer = TRUE, line = -1, adj = .8, cex = .8)
+# Panel 3- Oxycline, positive network
+plot(grph.oxycline.pos,
+     vertex.label=NA,
+     layout=layout_with_graphopt(grph.oxycline.pos),
+     vertex.color=domain_color_oxycline_pos)
+mtext("Oxycline", side=2, cex = .8, line = 1.5)
+# Panel 4- Oxycline, negative network
+plot(grph.oxycline.neg,
+     vertex.label=NA,
+     layout=layout_with_graphopt(grph.oxycline.neg),
+     vertex.color=domain_color_oxycline_neg)
+# Panel 5- Anoxic, positive network
+plot(grph.anoxic.pos,
+     vertex.label=NA,
+     layout=layout_with_graphopt(grph.anoxic.pos),
+     vertex.color=domain_color_anoxic_pos)
+mtext("Anoxic", side=2, cex = .8, line = 1.5)
+# Panel 6- Anoxic, negative network
+plot(grph.anoxic.neg,
+     vertex.label=NA,
+     layout=layout_with_graphopt(grph.anoxic.neg),
+     vertex.color=domain_color_anoxic_neg)
+# Add legend
+par(op) # Leave the last plot
+op <- par(usr=c(0,1,0,1), # Reset the coordinates
+          xpd=NA)         # Allow plotting outside the plot region
+legend(.15,-0.04, c("Archaea","Bacteria", "Eukarya", "No Blast Hit"), col=c("red", "green", "blue", "yellow"), pch = c(16), box.col=NA, cex = .8, horiz = T, x.intersp = c(0.3))
+
+
+
+
+# Save figure
+# Set up EPS and make plot
+setEPS(width = 6, height = 9)
+postscript("Figures/Networks_pos_neg.eps")
+op <- par(oma=c(0,.5,.5,0),# Room for the titles and legend
+  mfrow=c(3,2),
+  mai=c(.3,.3,.3,.3))
+# Panel 1- All depths, positive network
+plot(grph.pos,
+     vertex.label=NA,
+     layout=layout_with_graphopt(grph.pos),
+     vertex.color=domain_color_pos)
+mtext ("Positive", side = 3, outer = TRUE, line = -1, adj = 0.22, cex = .8)
+mtext("All depths", side=2, cex = .8, line = 1.5)
+# Panel 2- All depths, negative network
+plot(grph.neg,
+     vertex.label=NA,
+     layout=layout_with_graphopt(grph.neg),
+     vertex.color=domain_color_neg)
+mtext ("Negative", side = 3, outer = TRUE, line = -1, adj = .8, cex = .8)
+# Panel 3- Oxycline, positive network
+plot(grph.oxycline.pos,
+     vertex.label=NA,
+     layout=layout_with_graphopt(grph.oxycline.pos),
+     vertex.color=domain_color_oxycline_pos)
+mtext("Oxycline", side=2, cex = .8, line = 1.5)
+# Panel 4- Oxycline, negative network
+plot(grph.oxycline.neg,
+     vertex.label=NA,
+     layout=layout_with_graphopt(grph.oxycline.neg),
+     vertex.color=domain_color_oxycline_neg)
+# Panel 5- Anoxic, positive network
+plot(grph.anoxic.pos,
+     vertex.label=NA,
+     layout=layout_with_graphopt(grph.anoxic.pos),
+     vertex.color=domain_color_anoxic_pos)
+mtext("Anoxic", side=2, cex = .8, line = 1.5)
+# Panel 6- Anoxic, negative network
+plot(grph.anoxic.neg,
+     vertex.label=NA,
+     layout=layout_with_graphopt(grph.anoxic.neg),
+     vertex.color=domain_color_anoxic_neg)
+# Add legend
+par(op) # Leave the last plot
+op <- par(usr=c(0,1,0,1), # Reset the coordinates
+          xpd=NA)         # Allow plotting outside the plot region
+legend(.15,-0.04, c("Archaea","Bacteria", "Eukarya", "No Blast Hit"), col=c("red", "green", "blue", "yellow"), pch = c(16), box.col=NA, cex = .8, horiz = T, x.intersp = c(0.3))
+dev.off()
+
+
+
+```
+
+
+
 
 ### Collect network parameters
 
@@ -2454,7 +3051,7 @@ length(E(grph.oxycline)$weight)
 # percent of neg edges 
 (sum(E(grph.oxycline)$weight<0)/length(E(grph.oxycline)$weight))*100
 
-# total number of edges in oxycline network
+# total number of edges in anoxic network
 length(E(grph.anoxic)$weight)
 # percent of neg edges 
 (sum(E(grph.anoxic)$weight<0)/length(E(grph.anoxic)$weight))*100
@@ -2466,10 +3063,10 @@ Declining number of total edges going from full dataset --> oxycline only --> an
 #### Edge density
 the number of edges relatives to total number of possible edges
 ```{r}
-edge_density(grph)
-edge_density(grph.2domains)
-edge_density(grph.oxycline)
-edge_density(grph.anoxic)
+edge_density(grph)*100
+edge_density(grph.2domains)*100
+edge_density(grph.oxycline)*100
+edge_density(grph.anoxic)*100
 ```
 The full dataset has the highest edge density, then oxycline, then anoxic
 
@@ -2509,7 +3106,85 @@ The longest average path length is in the oxycline, followed by the whole datase
 
 
 
+### Which ASVs are in positive vs negative networks
+```{r}
+# Positive network- full dataset
+grph.pos_df <- igraph::as_data_frame(grph.pos, 'both')
+grph.pos_df_vert <- grph.pos_df$vertices
+# How many Syndiniales and Polycystinea?
+as.data.frame(table(grph.pos_df_vert$"taxonomy-5"))
+# 37 Dino-Group-II
+# 3 Dino-Group-I
+# 34 Spumellarida
 
+# Negative network- full dataset
+grph.neg_df <- igraph::as_data_frame(grph.neg, 'both')
+grph.neg_df_vert <- grph.neg_df$vertices
+# How many Syndiniales and Polycystinea?
+as.data.frame(table(grph.neg_df_vert$"taxonomy-5"))
+# 18 Dino-Group-II
+# 4 Dino-Group-I
+# 17 Spumellarida
+
+
+
+# Positive network- oxycline
+grph.oxycline.pos_df <- igraph::as_data_frame(grph.oxycline.pos, 'both')
+grph.oxycline.pos_df_vert <- grph.oxycline.pos_df$vertices
+# How many Syndiniales and Polycystinea?
+as.data.frame(table(grph.oxycline.pos_df_vert$"taxonomy-5"))
+# 34 Dino-Group-II
+# 1 Dino-Group-I
+# 24 Spumellarida
+
+# Negative network- oxycline
+grph.oxycline.neg_df <- igraph::as_data_frame(grph.oxycline.neg, 'both')
+grph.oxycline.neg_df_vert <- grph.oxycline.neg_df$vertices
+# How many Syndiniales and Polycystinea?
+as.data.frame(table(grph.oxycline.neg_df_vert$"taxonomy-5"))
+# 24 Dino-Group-II
+# 1 Dino-Group-I
+# 9 Spumellarida
+
+
+
+# Positive network- anoxic
+grph.anoxic.pos_df <- igraph::as_data_frame(grph.anoxic.pos, 'both')
+grph.anoxic.pos_df_vert <- grph.anoxic.pos_df$vertices
+# How many Syndiniales and Polycystinea?
+as.data.frame(table(grph.anoxic.pos_df_vert$"taxonomy-5"))
+# 0 Dino-Group-II
+# 1 Dino-Group-I
+# 8 Spumellarida
+
+# Negative network- anoxic
+grph.anoxic.neg_df <- igraph::as_data_frame(grph.anoxic.neg, 'both')
+grph.anoxic.neg_df_vert <- grph.anoxic.neg_df$vertices
+# How many Syndiniales and Polycystinea?
+as.data.frame(table(grph.anoxic.neg_df_vert$"taxonomy-5"))
+# 0 Dino-Group-II
+# 0 Dino-Group-I
+# 0 Spumellarida
+```
+
+### Save and re-load environment
+```{r}
+save.image("EnvironmentBackups/CariacoEuks_postanalysis_vars_upto_networkparameters.RData")
+```
+
+Or load if coming back
+```{r}
+load("EnvironmentBackups/CariacoEuks_postanalysis_vars_upto_networkparameters.RData")
+```
+
+## STOPPED HERE. CONTINUE PLAYING WITH PLOTS BELOW, highliting specific groups (Synd, Spumellaride, Alphas, Deferribac, etc). COLLECT OVERALL NETWORK PARAMETERS AFTER REMOVING EUKS TO SEE HOW NETOWORKS CHANGE
+- report blast/ new SILVA results for 
+  - "No blast hit" denovo129797
+  - "AEGAN-245" from a metagenome denovo351910
+- Determine total number of edges connected to euks vs bacteria
+  
+
+  
 
 
 ### Analyze node-level measures from each network
@@ -2792,17 +3467,10 @@ ggplotly(p, tooltip = c("ID","taxonomy-2", "taxonomy-3", "taxonomy-4", "taxonomy
 - ...
 
   
+
+
   
   
-  
-  
-  
-  
-## STOPPED HERE. CONTINUE PLAYING WITH PLOTS ABOVE, highliting specific groups (Synd, Spumellaride, Alphas, Deferribac, etc). COLLECT OVERALL NETWORK PARAMETERS AFTER REMOVING EUKS TO SEE HOW NETOWORKS CHANGE
-- report blast/ new SILVA results for 
-  - "No blast hit" denovo129797
-  - "AEGAN-245" from a metagenome denovo351910
-- Determine total number of edges connected to euks vs bacteria
   
 
 
