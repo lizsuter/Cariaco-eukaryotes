@@ -688,7 +688,7 @@ otu_table_mean_ra
 ```
 
 
-### Bubble Plot of Orders within Rhizaria
+### Bubble Plot of Orders within Opisthokonta
 
 ```{r}
 # reorder some factors to make them plot in the order I want
@@ -699,7 +699,7 @@ opithokonta_bubbleplot_color <- ggplot(otu_table_mean_ra,aes (x = as.character(D
   geom_point(aes(size =Mean_RA))+
   facet_wrap(Season~SizeFraction, scales = "free_x", drop= TRUE, ncol = 4) +
   scale_size(range = c(1,15)) +
-  scale_size_area(breaks = c(0,.25,.5,.75,1), max_size = 6) +
+  scale_size_area(breaks = c(0,.1,.2,.3), max_size = 6) +
   xlab("Depth") +
   ylab("") +
   labs(size="Relative Abundance", color = "Redox Condition") +
@@ -724,16 +724,16 @@ ggsave(filename = "Figures/opithokonta_bubbleplot_color.eps", plot = opithokonta
 
 
 
-## Orders within Stramenopiles
+## Classes within Stramenopiles
 ### Prepare data
-Filter to only Stramenopiles; glom by order
+Filter to only Stramenopiles; glom by class (more meaningful than Order in this case)
 ```{r}
 keeptaxa <- taxa_names(ps_ra_mean)[(as.data.frame(tax_table(ps_ra_mean))$Supergroup %in% c("Stramenopiles"))]
 ps_ra_mean_stramenopiles <- prune_taxa(keeptaxa, ps_ra_mean)
-ps_ra_mean_stramenopiles_orders <- tax_glom(ps_ra_mean_stramenopiles, "Order")
+ps_ra_mean_stramenopiles_classes <- tax_glom(ps_ra_mean_stramenopiles, "Class")
 
-stramenopiles_df <- data.frame(otu_table(ps_ra_mean_stramenopiles_orders))
-colnames(stramenopiles_df) <- colnames(otu_table(ps_ra_mean_stramenopiles_orders))
+stramenopiles_df <- data.frame(otu_table(ps_ra_mean_stramenopiles_classes))
+colnames(stramenopiles_df) <- colnames(otu_table(ps_ra_mean_stramenopiles_classes))
 stramenopiles_df$ASV <- rownames(stramenopiles_df)
 
 otu_table_mean_ra <- left_join(stramenopiles_df, as_tibble(taxonomy, rownames = "ASV"), by = "ASV")
@@ -743,7 +743,7 @@ otu_table_mean_ra
 Some manual curating for plottin
 ```{r}
 # Make a new column that has descriptive taxonomy
-otu_table_mean_ra$Descriptive <- paste(otu_table_mean_ra$Division, otu_table_mean_ra$Class, otu_table_mean_ra$Order)
+otu_table_mean_ra$Descriptive <- paste(otu_table_mean_ra$Division, otu_table_mean_ra$Class)
 otu_table_mean_ra
 ```
 
@@ -767,7 +767,7 @@ otu_table_mean_ra
 ```
 
 
-### Bubble Plot of Orders within Rhizaria
+### Bubble Plot of Orders within Stramenopiles
 
 ```{r}
 # reorder some factors to make them plot in the order I want
@@ -778,7 +778,7 @@ stramenopiles_bubbleplot_color <- ggplot(otu_table_mean_ra,aes (x = as.character
   geom_point(aes(size =Mean_RA))+
   facet_wrap(Season~SizeFraction, scales = "free_x", drop= TRUE, ncol = 4) +
   scale_size(range = c(1,15)) +
-  scale_size_area(breaks = c(0,.25,.5,.75,1), max_size = 6) +
+  scale_size_area(breaks = c(0,.1,.2,.3), max_size = 6) +
   xlab("Depth") +
   ylab("") +
   labs(size="Relative Abundance", color = "Redox Condition") +
@@ -795,9 +795,9 @@ stramenopiles_bubbleplot_color
 Save figure
 ```{r}
 # set explicit panel size so they will be consistent for all figures
-stramenopiles_bubbleplot_color <- set_panel_size(stramenopiles_bubbleplot_color, width  = unit(1.7, "in"), height = unit(10, "in"))  
+stramenopiles_bubbleplot_color <- set_panel_size(stramenopiles_bubbleplot_color, width  = unit(1.7, "in"), height = unit(5.5, "in"))  
 
-ggsave(filename = "Figures/stramenopiles_bubbleplot_color.eps", plot = stramenopiles_bubbleplot_color, units = c("in"), width = 14, height = 11, dpi = 300)
+ggsave(filename = "Figures/stramenopiles_bubbleplot_color.eps", plot = stramenopiles_bubbleplot_color, units = c("in"), width = 14, height = 10, dpi = 300)
 ```
 
 
@@ -2928,9 +2928,9 @@ dev.off()
 
 ```{r}
 # Set up in panels
-op <- par(oma=c(0,.5,.5,0),# Room for the titles and legend
-  mfrow=c(3,2),
-  mai=c(.3,.3,.3,.3))
+op <- par(oma=c(2,.5,.5,0),# Room for the titles and legend
+  mfrow=c(4,2),
+  mai=c(.15,.3,.15,.1))
 # Panel 1- All depths, positive network
 plot(grph.pos,
      vertex.label=NA,
@@ -2966,6 +2966,17 @@ plot(grph.anoxic.neg,
      vertex.label=NA,
      layout=layout_with_graphopt(grph.anoxic.neg),
      vertex.color=domain_color_anoxic_neg)
+# Panel 7- 2 Domains, positive network
+plot(grph.2domains.pos,
+     vertex.label=NA,
+     layout=layout_with_graphopt(grph.2domains.pos),
+     vertex.color=domain_color_2domains_pos)
+mtext("Prok Only", side=2, cex = .8, line = 1.5)
+# Panel 8- 2 Domains, negative network
+plot(grph.2domains.neg,
+     vertex.label=NA,
+     layout=layout_with_graphopt(grph.2domains.pos),
+     vertex.color=domain_color_2domains_neg)
 # Add legend
 par(op) # Leave the last plot
 op <- par(usr=c(0,1,0,1), # Reset the coordinates
@@ -2979,9 +2990,9 @@ legend(.15,-0.04, c("Archaea","Bacteria", "Eukarya", "No Blast Hit"), col=c("red
 # Set up EPS and make plot
 setEPS(width = 6, height = 9)
 postscript("Figures/Networks_pos_neg.eps")
-op <- par(oma=c(0,.5,.5,0),# Room for the titles and legend
-  mfrow=c(3,2),
-  mai=c(.3,.3,.3,.3))
+op <- par(oma=c(2,.5,.5,0),# Room for the titles and legend
+  mfrow=c(4,2),
+  mai=c(.15,.3,.15,.1))
 # Panel 1- All depths, positive network
 plot(grph.pos,
      vertex.label=NA,
@@ -3017,6 +3028,17 @@ plot(grph.anoxic.neg,
      vertex.label=NA,
      layout=layout_with_graphopt(grph.anoxic.neg),
      vertex.color=domain_color_anoxic_neg)
+# Panel 7- 2 Domains, positive network
+plot(grph.2domains.pos,
+     vertex.label=NA,
+     layout=layout_with_graphopt(grph.2domains.pos),
+     vertex.color=domain_color_2domains_pos)
+mtext("Prok Only", side=2, cex = .8, line = 1.5)
+# Panel 8- 2 Domains, negative network
+plot(grph.2domains.neg,
+     vertex.label=NA,
+     layout=layout_with_graphopt(grph.2domains.pos),
+     vertex.color=domain_color_2domains_neg)
 # Add legend
 par(op) # Leave the last plot
 op <- par(usr=c(0,1,0,1), # Reset the coordinates
@@ -3106,7 +3128,7 @@ The longest average path length is in the oxycline, followed by the whole datase
 
 
 
-### Which ASVs are in positive vs negative networks
+### Which ASVs are in positive vs negative networks?
 ```{r}
 # Positive network- full dataset
 grph.pos_df <- igraph::as_data_frame(grph.pos, 'both')
@@ -3167,9 +3189,58 @@ as.data.frame(table(grph.anoxic.neg_df_vert$"taxonomy-5"))
 # 0 Spumellarida
 ```
 
+### What are the interestined eukaryotic groups connected to?
+```{r}
+# Positive associations: Syndiniales
+# Pull out names of Syndiniales and Spumellarida ASVs
+grph.pos_df_vert_synd <- filter(grph.pos_df_vert, `taxonomy-4` == "Syndiniales")
+# filter graph to include only edges connected to those nodes
+grph.pos_synd_edges <- E(grph.pos)[from(grph.pos_df_vert_synd$name)] # get edges
+grph.pos.synd_subgraph <- subgraph.edges(grph.pos, grph.pos_synd_edges) # filter graph
+# get taxonomy of remaining nodes, removing the Syndiniales from table (eg. only connected nodes) and grouping by taxonomy
+grph.pos_df_vert %>%
+  filter(`name` %in% V(grph.pos.synd_subgraph)$name & !`taxonomy-4` %in% c("Syndiniales")) %>%
+  count(`taxonomy-2`,`taxonomy-3`,`taxonomy-4`,`taxonomy-5`, name = "count", sort = TRUE)
+
+# Positive associations: Spumellarida
+grph.pos_df_vert_spum <- filter(grph.pos_df_vert, `taxonomy-5` == "Spumellarida")
+grph.pos_spum_edges <- E(grph.pos)[from(grph.pos_df_vert_spum$name)] 
+grph.pos.spum_subgraph <- subgraph.edges(grph.pos, grph.pos_spum_edges) 
+grph.pos_df_vert  %>% 
+  filter(`name` %in% V(grph.pos.spum_subgraph)$name & !`taxonomy-5` %in% c("Spumellarida")) %>%
+  count(`taxonomy-2`,`taxonomy-3`,`taxonomy-4`,`taxonomy-5`, name = "count", sort = TRUE)
+
+# Negative associations: Syndiniales
+grph.neg_df_vert_synd <- filter(grph.neg_df_vert, `taxonomy-4` == "Syndiniales")
+grph.neg_synd_edges <- E(grph.neg)[from(grph.neg_df_vert_synd$name)] 
+grph.neg.synd_subgraph <- subgraph.edges(grph.neg, grph.neg_synd_edges) 
+grph.neg_df_vert %>%
+  filter(`name` %in% V(grph.neg.synd_subgraph)$name & !`taxonomy-4` %in% c("Syndiniales")) %>%
+  count(`taxonomy-2`,`taxonomy-3`,`taxonomy-4`,`taxonomy-5`, name = "count", sort = TRUE)
+
+# Negative associations: Spumellarida
+grph.neg_df_vert_spum <- filter(grph.neg_df_vert, `taxonomy-5` == "Spumellarida")
+grph.neg_spum_edges <- E(grph.neg)[from(grph.neg_df_vert_spum$name)] 
+grph.neg.spum_subgraph <- subgraph.edges(grph.neg, grph.neg_spum_edges) 
+grph.neg_df_vert %>% 
+  filter(`name` %in% V(grph.neg.spum_subgraph)$name & !`taxonomy-5` %in% c("Spumellarida")) %>%
+  count(`taxonomy-2`,`taxonomy-3`,`taxonomy-4`,`taxonomy-5`, name = "count", sort = TRUE)
+
+
+# Also ckeck out Cariacotrichea to hypothesize about possible symbiosis partners
+# Positive associations only
+grph.pos_df_vert_cari <- filter(grph.pos_df_vert, `taxonomy-4` == "Cariacotrichea")
+grph.pos_cari_edges <- E(grph.pos)[from(grph.pos_df_vert_cari$name)] 
+grph.pos.cari_subgraph <- subgraph.edges(grph.pos, grph.pos_cari_edges) 
+grph.pos_df_vert %>% 
+  filter(`name` %in% V(grph.pos.cari_subgraph)$name & !`taxonomy-4` %in% c("Cariacotrichea"))%>%
+  count(`taxonomy-2`,`taxonomy-3`,`taxonomy-4`,`taxonomy-5`, name = "count", sort = TRUE)
+```
+
+
 ### Save and re-load environment
 ```{r}
-save.image("EnvironmentBackups/CariacoEuks_postanalysis_vars_upto_networkparameters.RData")
+# save.image("EnvironmentBackups/CariacoEuks_postanalysis_vars_upto_networkparameters.RData")
 ```
 
 Or load if coming back
@@ -3177,17 +3248,8 @@ Or load if coming back
 load("EnvironmentBackups/CariacoEuks_postanalysis_vars_upto_networkparameters.RData")
 ```
 
-## STOPPED HERE. CONTINUE PLAYING WITH PLOTS BELOW, highliting specific groups (Synd, Spumellaride, Alphas, Deferribac, etc). COLLECT OVERALL NETWORK PARAMETERS AFTER REMOVING EUKS TO SEE HOW NETOWORKS CHANGE
-- report blast/ new SILVA results for 
-  - "No blast hit" denovo129797
-  - "AEGAN-245" from a metagenome denovo351910
-- Determine total number of edges connected to euks vs bacteria
-  
 
-  
-
-
-### Analyze node-level measures from each network
+### Analyze node-level measures for keystone-ness
 Calculate 4 parameters for each individual node:
 
 - degree (de) = number of edges connected to the node
@@ -3196,18 +3258,18 @@ Calculate 4 parameters for each individual node:
 - closeness centrality (cc) = average distance (number of edges) of the node to any other node
 - local clustering coefficient (l.cluster) , aka transitivity = the proportion of two nodes that are connected by a third node, of being connected to each other (eg. how many of a node's "friends" know each other?)
 
-#### All depths network
+
 ```{r}
-# First change the weights of the edges (the strength of association) to absolute value. This won't work if negative associations are left with negative signs
+# First change the weights of the edges (the strength of association) to absolute value. This won't work if negative edge weights are left with the negative signs
 E(grph)$weight <- abs(E(grph)$weight)
 
+# calculate parameters
 names=V(grph)$name
 de=degree(grph)
 st=graph.strength(grph)
 be=betweenness(grph, normalized=T)
 cc = closeness(grph)
 l.cluster=transitivity(grph, "local")
-
 
 
 # assemble dataset and match full taxonomy
@@ -3246,225 +3308,38 @@ fulldateset_node_measures <- fulldateset_node_measures %>%
 
 # get enough colors and randomly rearrange so they are easier to separate on the plot
 mycolors <- colorRampPalette(brewer.pal(12, "Paired"))(length(unique(fulldateset_node_measures$`taxonomy-3`)))
+set.seed(123)
 mycolors <-  sample(mycolors)
 
 # plot with plotly and so I can hover over points and determine which taxa they are
 p <- ggplot(fulldateset_node_measures, aes(x = degree, y = betweenness, ID = ID, shape = `taxonomy-1`, `taxonomy-2` = `taxonomy-2`, color = `taxonomy-3`, `taxonomy-4` = `taxonomy-4`, `taxonomy-5` = `taxonomy-5`)) +
-  geom_point(size = 5) +
+  geom_point(size = 4) +
   scale_y_continuous(trans='log10') +
   scale_color_manual(values = mycolors) +
+  theme(legend.title = element_blank()) +
   theme_bw()
-ggplotly(p, tooltip = c("ID","taxonomy-2", "taxonomy-3", "taxonomy-4", "taxonomy-5"))
-
-```
-**Summary**
-
-- Highest betweenness: 2 Defferibacreres/ MG-A OTUs (denovo252731 and denovo249977) and a Gammaproteobacteria. Oceanospiralles/ OM182 clade OTU: denovo279114
-- Highest degrees: Several Alphaproteobacteria/SAR11 OTUs, a Chloroflexi/ Anaerolineaceae OTU (denovo317108) and Proteobacteria/ AEGEAN-245 OTU (denovo351910- Blast this one see if there's better taxonomy available now)
-- Nodes with mixed high degree/ high betweenness: 2 Thaumarchaeota Group C3 OTUs, an Actinobacteria/ Acidimicrobiales/ Sva0966 marine group OTU, and a SAR11 (Surface_1 clade) OTU
-- Low betweenness/ high degree
-  - Spirochaetes/ MSBL8
-  - Alphaproteobacteria/ OCS116
-  - Euryacrchaeota/ Halobacteria/ Marine Hydrothermal Vent Group 
-  - Thamarchaeota/ Group C3
-  - Candidate division WS3
-  - Nitrospinaceae
-  - Candidate division OP3
-  - Nitrospira OPB95
-- Eukaryotes?
-  - Rhizaria/ Radiolaria/ Polycystinea/ Spumellarida and Alveolota/ Dinoflagellate/ Syndiniales or Dinphyceae are scattered throughout plot
-  - Ciliates present but less so. Notably Cariacotrichea is present
-
-
-
-Plot node degree and transitivity (clustering coefficient)
-```{r}
-# plot with plotly and so I can hover over points and determine which taxa they are
-p <- ggplot(fulldateset_node_measures, aes(x = clustering_coefficient, y = betweenness, ID = ID, shape = `taxonomy-1`, `taxonomy-2` = `taxonomy-2`, color = `taxonomy-3`, `taxonomy-4` = `taxonomy-4`, `taxonomy-5` = `taxonomy-5`)) +
-  geom_point(size = 5) +
-  scale_color_manual(values = mycolors) +
-    scale_y_continuous(trans='log10') +
-  theme_bw()
+p
 ggplotly(p, tooltip = c("ID","taxonomy-2", "taxonomy-3", "taxonomy-4", "taxonomy-5"))
 
 ```
 
-**Summary**
-- High betweenness but low clustering coef:
-  - Deferibacteres/ Marine Group A
-  - Some Syndiniales
-  - Gammaproteobacteria: OM182 clade and Xanthomonadales/ Sinobacteraceae clade, and Vibrionaceae clade
-  - Actinobacteria/ Acidimicrobiales/ Sva0966 marine group OTU
-- High betweenness and high clustering coefficient
-  - Cnidaria, Crustaceae, several Syndinales, Planctomycetes OM190, Euryarchaeota MG II, 1 Spumellarida
-- Low betweenness, High clusering coefficient
-  - Thaumarchaeota MG I, 1 Spumellarida,1 Dinoflagelata/ Dinophyceae, and the No Blast Hit OTU (not even domain assigned- denovo129797- blast this one)
-  
-  
-  
-#### Oxycline network
+Make static figure for manuscript
 ```{r}
-# First change the weights of the edges (the strength of association) to absolute value. This won't work if negative associations are left with negative signs
-E(grph.oxycline)$weight <- abs(E(grph.oxycline)$weight)
 
-names=V(grph.oxycline)$name
-de=degree(grph.oxycline)
-st=graph.strength(grph.oxycline)
-be=betweenness(grph.oxycline, normalized=T)
-cc = closeness(grph.oxycline)
-l.cluster=transitivity(grph.oxycline, "local")
-
-
-
-# assemble dataset and match full taxonomy
-fulldateset_node_measures <- data.frame(ID=names, degree=de, strength=st, betweenness=be, closeness = cc, clustering_coefficient = l.cluster) 
-
-# Put back bac taxaonomy
-temp1 <- left_join(fulldateset_node_measures[1:dim(otu_table(ps_bac_oxycline_pruned))[1],], bac_taxonomy, by = c("ID" = "#OTU ID")) 
-# delete "Taxonomy-9" and "refined Taxonomy" columns 
-temp1 <- select(temp1, -"taxonomy-9", -"Refined taxonomy")
-
-
-temp2 <- left_join(fulldateset_node_measures[sum(dim(otu_table(ps_bac_oxycline_pruned))[1],1):sum(dim(otu_table(ps_bac_oxycline_pruned))[1],dim(otu_table(ps_arch_oxycline_pruned))[1]),], arch_taxonomy, by = c("ID" = "#OTU ID")) 
-
-
-temp3 <- left_join(fulldateset_node_measures[sum(dim(otu_table(ps_arch_oxycline_pruned))[1], dim(otu_table(ps_bac_oxycline_pruned))[1],1):sum(dim(otu_table(ps_arch_oxycline_pruned))[1], dim(otu_table(ps_bac_oxycline_pruned))[1],dim(otu_table(ps_euk_oxycline_pruned))[1]),], euk_taxonomy, by = c("ID" = "#ASV ID")) 
-# Rename col names to match those from Bac and Arch
-temp3 <- temp3 %>%
-  rename("taxonomy-1" = Kingdom, "taxonomy-2" = Supergroup, "taxonomy-3" = Division, "taxonomy-4" = Class, "taxonomy-5" = Order, "taxonomy-6" = Family, "taxonomy-7" = Genus, "taxonomy-8" = Species)
-
-# combine back all 3 domains, with new names as row names in a dataframe
-fulldateset_node_measures <- rbind(temp1, temp2, temp3)
-fulldateset_node_measures
-```
-
-Plot betweeness vs degree for each node. 
-
-```{r}
-# replace NA in taxonomy with unidentified 
-# remove nodes with 0 betweenness (can't calculate log10 of 0)
-# replace NaN clustering coefs with 0
-fulldateset_node_measures <- fulldateset_node_measures %>% 
-  replace(is.na(.), "unidentified") %>%
-  filter(!betweenness == 0) 
-
-# get enough colors and randomly rearrange so they are easier to separate on the plot
-mycolors <- colorRampPalette(brewer.pal(12, "Paired"))(length(unique(fulldateset_node_measures$`taxonomy-3`)))
-mycolors <-  sample(mycolors)
-
-# plot with plotly and so I can hover over points and determine which taxa they are
-p <- ggplot(fulldateset_node_measures, aes(x = degree, y = betweenness, ID = ID, shape = `taxonomy-1`, `taxonomy-2` = `taxonomy-2`, color = `taxonomy-3`, `taxonomy-4` = `taxonomy-4`, `taxonomy-5` = `taxonomy-5`)) +
-  geom_point(size = 5) +
+p2 <- ggplot(fulldateset_node_measures, aes(x = degree, y = betweenness, shape = `taxonomy-1`, color = `taxonomy-3`)) +
+  geom_point(size = 4) +
   scale_y_continuous(trans='log10') +
-  scale_color_manual(values = mycolors) +
-  theme_bw()
-ggplotly(p, tooltip = c("ID","taxonomy-2", "taxonomy-3", "taxonomy-4", "taxonomy-5"))
+  scale_color_manual(values = mycolors, name = "") +
+  scale_shape_manual(values = c(19,17,15,18), name = "") +
+  theme(legend.title=element_blank()) +
+  theme_bw() 
+p2
 
-```
-**Summary**
-
-- ...
-
-
-
-Plot node degree and transitivity (clustering coefficient)
-```{r}
-# plot with plotly and so I can hover over points and determine which taxa they are
-p <- ggplot(fulldateset_node_measures, aes(x = clustering_coefficient, y = betweenness, ID = ID, shape = `taxonomy-1`, `taxonomy-2` = `taxonomy-2`, color = `taxonomy-3`, `taxonomy-4` = `taxonomy-4`, `taxonomy-5` = `taxonomy-5`)) +
-  geom_point(size = 5) +
-  scale_color_manual(values = mycolors) +
-    scale_y_continuous(trans='log10') +
-  theme_bw()
-ggplotly(p, tooltip = c("ID","taxonomy-2", "taxonomy-3", "taxonomy-4", "taxonomy-5"))
+ggsave("figures/betweenness_vs_degree.eps",p2, width = 12, height = 8, units = c("in"))
 
 ```
 
-**Summary**
-- ...
 
-
-  
-  
-  
-#### Anoxic network
-```{r}
-# First change the weights of the edges (the strength of association) to absolute value. This won't work if negative associations are left with negative signs
-E(grph.anoxic)$weight <- abs(E(grph.anoxic)$weight)
-
-names=V(grph.anoxic)$name
-de=degree(grph.anoxic)
-st=graph.strength(grph.anoxic)
-be=betweenness(grph.anoxic, normalized=T)
-cc = closeness(grph.anoxic)
-l.cluster=transitivity(grph.anoxic, "local")
-
-
-
-# assemble dataset and match full taxonomy
-fulldateset_node_measures <- data.frame(ID=names, degree=de, strength=st, betweenness=be, closeness = cc, clustering_coefficient = l.cluster) 
-
-# Put back bac taxaonomy
-temp1 <- left_join(fulldateset_node_measures[1:dim(otu_table(ps_bac_anoxic_pruned))[1],], bac_taxonomy, by = c("ID" = "#OTU ID")) 
-# delete "Taxonomy-9" and "refined Taxonomy" columns 
-temp1 <- select(temp1, -"taxonomy-9", -"Refined taxonomy")
-
-
-temp2 <- left_join(fulldateset_node_measures[sum(dim(otu_table(ps_bac_anoxic_pruned))[1],1):sum(dim(otu_table(ps_bac_anoxic_pruned))[1],dim(otu_table(ps_arch_anoxic_pruned))[1]),], arch_taxonomy, by = c("ID" = "#OTU ID")) 
-
-
-temp3 <- left_join(fulldateset_node_measures[sum(dim(otu_table(ps_arch_anoxic_pruned))[1], dim(otu_table(ps_bac_anoxic_pruned))[1],1):sum(dim(otu_table(ps_arch_anoxic_pruned))[1], dim(otu_table(ps_bac_anoxic_pruned))[1],dim(otu_table(ps_euk_anoxic_pruned))[1]),], euk_taxonomy, by = c("ID" = "#ASV ID")) 
-# Rename col names to match those from Bac and Arch
-temp3 <- temp3 %>%
-  rename("taxonomy-1" = Kingdom, "taxonomy-2" = Supergroup, "taxonomy-3" = Division, "taxonomy-4" = Class, "taxonomy-5" = Order, "taxonomy-6" = Family, "taxonomy-7" = Genus, "taxonomy-8" = Species)
-
-# combine back all 3 domains, with new names as row names in a dataframe
-fulldateset_node_measures <- rbind(temp1, temp2, temp3)
-fulldateset_node_measures
-```
-
-Plot betweeness vs degree for each node. 
-
-```{r}
-# replace NA in taxonomy with unidentified 
-# remove nodes with 0 betweenness (can't calculate log10 of 0)
-# replace NaN clustering coefs with 0
-fulldateset_node_measures <- fulldateset_node_measures %>% 
-  replace(is.na(.), "unidentified") %>%
-  filter(!betweenness == 0) 
-
-# get enough colors and randomly rearrange so they are easier to separate on the plot
-mycolors <- colorRampPalette(brewer.pal(12, "Paired"))(length(unique(fulldateset_node_measures$`taxonomy-3`)))
-mycolors <-  sample(mycolors)
-
-# plot with plotly and so I can hover over points and determine which taxa they are
-p <- ggplot(fulldateset_node_measures, aes(x = degree, y = betweenness, ID = ID, shape = `taxonomy-1`, `taxonomy-2` = `taxonomy-2`, color = `taxonomy-3`, `taxonomy-4` = `taxonomy-4`, `taxonomy-5` = `taxonomy-5`)) +
-  geom_point(size = 5) +
-  scale_y_continuous(trans='log10') +
-  scale_color_manual(values = mycolors) +
-  theme_bw()
-ggplotly(p, tooltip = c("ID","taxonomy-2", "taxonomy-3", "taxonomy-4", "taxonomy-5"))
-
-```
-**Summary**
-
-- ...
-
-
-
-Plot node degree and transitivity (clustering coefficient)
-```{r}
-# plot with plotly and so I can hover over points and determine which taxa they are
-p <- ggplot(fulldateset_node_measures, aes(x = clustering_coefficient, y = betweenness, ID = ID, shape = `taxonomy-1`, `taxonomy-2` = `taxonomy-2`, color = `taxonomy-3`, `taxonomy-4` = `taxonomy-4`, `taxonomy-5` = `taxonomy-5`)) +
-  geom_point(size = 5) +
-  scale_color_manual(values = mycolors) +
-    scale_y_continuous(trans='log10') +
-  theme_bw()
-ggplotly(p, tooltip = c("ID","taxonomy-2", "taxonomy-3", "taxonomy-4", "taxonomy-5"))
-
-```
-
-**Summary**
-- ...
 
   
 
