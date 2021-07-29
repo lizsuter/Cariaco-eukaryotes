@@ -3342,6 +3342,38 @@ ggsave("figures/betweenness_vs_degree.eps",p2, width = 12, height = 8, units = c
 
 
   
+### How many edges does each group have as an aggregate
+```{r}
+de_df <- as.data.frame(de)
+de_df$name <- rownames(de_df)
+de_df <- left_join(de_df, all_temp, by = "name")
+
+de_df %>%
+  group_by(`taxonomy-1`) %>%
+  summarise(degreesum = sum(de)) %>%
+  arrange(desc(degreesum))
+
+de_df %>%
+  group_by(`taxonomy-2`) %>%
+  summarise(degreesum = sum(de)) %>%
+  arrange(desc(degreesum))
+
+de_df %>%
+  group_by(`taxonomy-3`) %>%
+  summarise(degreesum = sum(de)) %>%
+  arrange(desc(degreesum))
+
+de_df %>%
+  group_by(`taxonomy-4`) %>%
+  summarise(degreesum = sum(de)) %>%
+  arrange(desc(degreesum))
+
+de_df %>%
+  group_by(`taxonomy-5`) %>%
+  summarise(degreesum = sum(de)) %>%
+  arrange(desc(degreesum))
+
+```
 
 
   
