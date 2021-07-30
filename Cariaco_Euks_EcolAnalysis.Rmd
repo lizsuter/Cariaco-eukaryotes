@@ -1,7 +1,7 @@
 ---
-title: "Cariaco_Euks_PostAnalysis"
+title: "Ecologicall Analysis of Cariaco Eukaryotic 18S libraries"
 author: "Liz Suter"
-date: "5/26/2020"
+date: "Started 5/26/2020; Completed summer 2021"
 output: html_notebook
 editor_options: 
   chunk_output_type: inline
@@ -56,13 +56,6 @@ reorder_cor_and_p <- function(cormat, pmat){
   pmat <- pmat[hc$order, hc$order]
   list(r = cormat, p = pmat)
 }
-
-#Custom colorblind pallette, see: https://stackoverflow.com/questions/57153428/r-plot-color-combinations-that-are-colorblind-accessible
-customvermillion<-rgb(213/255,94/255,0/255)
-custombluegreen<-rgb(0/255,158/255,115/255)
-customblue<-rgb(0/255,114/255,178/255)
-customskyblue<-rgb(86/255,180/255,233/255)
-customreddishpurple<-rgb(204/255,121/255,167/255) 
 
 # Report versions of packages
 sessionInfo()
@@ -1014,7 +1007,7 @@ metadata_ordinations <- metadata_ordinations %>%
 # sort clr_asv_table_ps_filtered in same order as metadata 
 clr_asv_table_ps_filtered <- clr_asv_table_ps_filtered[metadata_ordinations$"Sample Name",]
 
-# re-run the PCA on clr_asv_table_ps_filtered
+# re-run the PCA on clr_asv_table_ps_filtered 
 lograt_pca <- prcomp(clr_asv_table_ps_filtered) 
 
 
@@ -1022,7 +1015,7 @@ lograt_pca <- prcomp(clr_asv_table_ps_filtered)
 metadata_ordinations <- select(metadata_ordinations, -Replicate, -Fluorescence, -BeamAtt, -TZVS, -Run, -"Assay Type", -AvgSpotLen, -Bases, -BioProject, -BioSample, -BioSampleModel, -Bytes, -"Center Name", -Collection_Date, -Consent, -"DATASTORE filetype", -"DATASTORE provider", -"DATASTORE region", -Experiment, -geo_loc_name_country, -geo_loc_name_country_continent, -geo_loc_name, -Instrument, -isolation_source, -lat_lon, -"Library Name", -LibraryLayout, -LibrarySelection, -LibrarySource, -Organism, -Platform, -ReleaseDate, -samp_collect_device, -"SRA Study", -Depth_m, -replicate, -size_fraction, -CH4_uM, -H2S_Um, -oxygen, -Oxygen_uM, -Particulate_Sulfur_uM, -salinity, -Temperature_degree_C, -TZVS_uM)
 
 # change the name of some variables to make them easier to plot
-metadata_ordinations <- rename(metadata_ordinations, PartS = ParticulateS, MicroAbun = "MicroAbun(x10^8 L^-1)",  FlagAbun = "FlagAbun(x10^5 L-1)", VLPAbun = "VLP(x10^8 L-1)")
+metadata_ordinations <- rename(metadata_ordinations, PartS = ParticulateS, MicroAbun = "MicroAbun(x10^8 L^-1)",  FlagAbun = "FlagAbun(x10^5 L-1)", VLPAbun = "VLP(x10^8 L-1)", Chemo = "Chemoautotrophy")
 
 
 # fit environmental factors and save stats output
@@ -1050,7 +1043,7 @@ pca_envfit_NO3 <- envfit(lograt_pca~NO3, metadata_ordinations, permutations = 10
 pca_envfit_PO4 <- envfit(lograt_pca~PO4, metadata_ordinations, permutations = 1000)
 pca_envfit_temp <- envfit(lograt_pca~Temp, metadata_ordinations, permutations = 1000)
 pca_envfit_sal <- envfit(lograt_pca~Salinity, metadata_ordinations, permutations = 1000)
-pca_envfit_chemo <- envfit(lograt_pca~Chemoautotrophy, metadata_ordinations, permutations = 1000)
+pca_envfit_chemo <- envfit(lograt_pca~Chemo, metadata_ordinations, permutations = 1000)
 pca_envfit_FlagAbun <- envfit(lograt_pca~FlagAbun, metadata_ordinations, permutations = 1000)
 ```
 
@@ -1073,7 +1066,7 @@ i=i+1 #increase the running parameter i from 1 to 2, i.e. check the next value i
 return(fit) #return fit as the result of the function
 } #close the function
 
-pca_sppfit_trim<-select.envfit(pca_sppfit, 0.65) 
+pca_sppfit_trim<-select.envfit(pca_sppfit, 0.6) 
 ```
 
 
@@ -1096,29 +1089,32 @@ op <- par(oma=c(0,0,0,1),# Room for the title and legend
   mfrow=c(2,2),
   mai=c(.65,.65,.1,0))
 # Panel 1- Add first half of envfit vectors
-with(metadata_ordinations, plot(scores(lograt_pca, display = "sites"), col = colvec[OxCond], pch = shapevec[SizeFraction], cex = 1.5, cex.lab = .8, cex.axis = .8, xlab = "", ylab = paste0('PC2 ', round(lograt_variances[2,2]*100,2),'%'), xaxt='n'))
+with(metadata_ordinations, plot(scores(lograt_pca, display = "sites"), col = colvec[OxCond], pch = shapevec[SizeFraction], cex = 1.5, cex.lab = .8, cex.axis = .8, xlab = "", ylab = paste0('PC2 ', round(lograt_variances[2,2]*100,2),'%'), xaxt='n', xlim=c(-60,60)))
 plot(pca_envfit_O2, p.max = 0.1, lwd = 2, col = "black", cex = 0.6)
 plot(pca_envfit_partS, p.max = 0.1, lwd = 2, col = "black", cex = 0.6)
 plot(pca_envfit_NO3, p.max = 0.1, lwd = 2, col = "black", cex = 0.6)
 plot(pca_envfit_PO4, p.max = 0.1, lwd = 2, col = "black", cex = 0.6)
 title("A", line = -1, adj = 0.02)
 # Panel 2- Add rest of envfit vectors
-with(metadata_ordinations, plot(scores(lograt_pca, display = "sites"), col = colvec[OxCond], pch = shapevec[SizeFraction], cex = 1.5, cex.lab = .8, cex.axis = .8, xlab = "", ylab = "", xaxt='n', yaxt='n'))
+with(metadata_ordinations, plot(scores(lograt_pca, display = "sites"), col = colvec[OxCond], pch = shapevec[SizeFraction], cex = 1.5, cex.lab = .8, cex.axis = .8, xlab = "", ylab = "", xaxt='n', yaxt='n', xlim=c(-60,60)))
 plot(pca_envfit_temp, p.max = 0.1, lwd = 2, col = "black", cex = 0.6)
 plot(pca_envfit_sal, p.max = 0.1, lwd = 2, col = "black", cex = 0.6)
 plot(pca_envfit_FlagAbun, p.max = 0.1, lwd = 2, col = "black", cex = 0.6)
+plot(pca_envfit_chemo, p.max = 0.1, lwd = 2, col = "black", cex = 0.6)
 title("B", line = -1, adj = 0.02)
 # Panel 3- Add spider lines indicating envfit centroids for Size Fraction
-with(metadata_ordinations, plot(scores(lograt_pca, display = "sites"), col = colvec[OxCond], pch = shapevec[SizeFraction], cex = 1.5, cex.lab = .8, cex.axis = .8, xlab = paste0('PC1 ', round(lograt_variances[1,2]*100,2),'%'), ylab = paste0('PC2 ', round(lograt_variances[2,2]*100,2),'%')))
+with(metadata_ordinations, plot(scores(lograt_pca, display = "sites"), col = colvec[OxCond], pch = shapevec[SizeFraction], cex = 1.5, cex.lab = .8, cex.axis = .8, xlab = paste0('PC1 ', round(lograt_variances[1,2]*100,2),'%'), ylab = paste0('PC2 ', round(lograt_variances[2,2]*100,2),'%'), xlim=c(-60,60)))
 with(metadata_ordinations, ordispider(lograt_pca, SizeFraction, lwd = 1.5, lty = c(1,2), label = TRUE, cex = 0.6))
 title("C", line = -1, adj = 0.02)
 # Panel 4 -Add vectors indicating significant spp
-with(metadata_ordinations, plot(scores(lograt_pca, display = "sites"), col = colvec[OxCond], pch = shapevec[SizeFraction], cex = 1.5, cex.lab = .8, cex.axis = .8, xlab = paste0('PC1 ', round(lograt_variances[1,2]*100,2),'%'), ylab = "", yaxt='n'))
+with(metadata_ordinations, plot(scores(lograt_pca, display = "sites"), col = colvec[OxCond], pch = shapevec[SizeFraction], cex = 1.5, cex.lab = .8, cex.axis = .8, xlab = paste0('PC1 ', round(lograt_variances[1,2]*100,2),'%'), ylab = "", yaxt='n', xlim=c(-60,60)))
 plot(pca_sppfit_trim, p.max = 0.001, col = "black", cex = 0.6)
 # annotate the 3 clusters of ASVs in panel D
 text(x=c(0), y=c(45), labels=c("Cluster I"), adj = 0.5, font = 2, cex = 0.8)
 text(x=c(50), y=c(30), labels=c("Cluster II"), adj = 0.5, font = 2, cex = 0.8)
 text(x=c(48), y=c(-35), labels=c("Cluster III"), adj = 0.5, font = 2, cex = 0.8)
+text(x=c(-48), y=c(-18), labels=c("Cluster IV"), adj = 0.5, font = 2, cex = 0.8)
+text(x=c(-48), y=c(10), labels=c("Cluster V"), adj = 0.5, font = 2, cex = 0.8)
 title("D", line = -1, adj = 0.02)
 # Add legend
 par(op) # Leave the last plot
@@ -1135,35 +1131,39 @@ op <- par(oma=c(0,0,0,1),# Room for the title and legend
   mfrow=c(2,2),
   mai=c(.65,.65,.1,0))
 # Panel 1- Add first half of envfit vectors
-with(metadata_ordinations, plot(scores(lograt_pca, display = "sites"), col = colvec[OxCond], pch = shapevec[SizeFraction], cex = 1.5, cex.lab = .8, cex.axis = .8, xlab = "", ylab = paste0('PC2 ', round(lograt_variances[2,2]*100,2),'%'), xaxt='n'))
+with(metadata_ordinations, plot(scores(lograt_pca, display = "sites"), col = colvec[OxCond], pch = shapevec[SizeFraction], cex = 1.5, cex.lab = .8, cex.axis = .8, xlab = "", ylab = paste0('PC2 ', round(lograt_variances[2,2]*100,2),'%'), xaxt='n', xlim=c(-60,60)))
 plot(pca_envfit_O2, p.max = 0.1, lwd = 2, col = "black", cex = 0.6)
 plot(pca_envfit_partS, p.max = 0.1, lwd = 2, col = "black", cex = 0.6)
 plot(pca_envfit_NO3, p.max = 0.1, lwd = 2, col = "black", cex = 0.6)
 plot(pca_envfit_PO4, p.max = 0.1, lwd = 2, col = "black", cex = 0.6)
 title("A", line = -1, adj = 0.02)
 # Panel 2- Add rest of envfit vectors
-with(metadata_ordinations, plot(scores(lograt_pca, display = "sites"), col = colvec[OxCond], pch = shapevec[SizeFraction], cex = 1.5, cex.lab = .8, cex.axis = .8, xlab = "", ylab = "", xaxt='n', yaxt='n'))
+with(metadata_ordinations, plot(scores(lograt_pca, display = "sites"), col = colvec[OxCond], pch = shapevec[SizeFraction], cex = 1.5, cex.lab = .8, cex.axis = .8, xlab = "", ylab = "", xaxt='n', yaxt='n', xlim=c(-60,60)))
 plot(pca_envfit_temp, p.max = 0.1, lwd = 2, col = "black", cex = 0.6)
 plot(pca_envfit_sal, p.max = 0.1, lwd = 2, col = "black", cex = 0.6)
 plot(pca_envfit_FlagAbun, p.max = 0.1, lwd = 2, col = "black", cex = 0.6)
+plot(pca_envfit_chemo, p.max = 0.1, lwd = 2, col = "black", cex = 0.6)
 title("B", line = -1, adj = 0.02)
 # Panel 3- Add spider lines indicating envfit centroids for Size Fraction
-with(metadata_ordinations, plot(scores(lograt_pca, display = "sites"), col = colvec[OxCond], pch = shapevec[SizeFraction], cex = 1.5, cex.lab = .8, cex.axis = .8, xlab = paste0('PC1 ', round(lograt_variances[1,2]*100,2),'%'), ylab = paste0('PC2 ', round(lograt_variances[2,2]*100,2),'%')))
+with(metadata_ordinations, plot(scores(lograt_pca, display = "sites"), col = colvec[OxCond], pch = shapevec[SizeFraction], cex = 1.5, cex.lab = .8, cex.axis = .8, xlab = paste0('PC1 ', round(lograt_variances[1,2]*100,2),'%'), ylab = paste0('PC2 ', round(lograt_variances[2,2]*100,2),'%'), xlim=c(-60,60)))
 with(metadata_ordinations, ordispider(lograt_pca, SizeFraction, lwd = 1.5, lty = c(1,2), label = TRUE, cex = 0.6))
 title("C", line = -1, adj = 0.02)
 # Panel 4 -Add vectors indicating significant spp
-with(metadata_ordinations, plot(scores(lograt_pca, display = "sites"), col = colvec[OxCond], pch = shapevec[SizeFraction], cex = 1.5, cex.lab = .8, cex.axis = .8, xlab = paste0('PC1 ', round(lograt_variances[1,2]*100,2),'%'), ylab = "", yaxt='n'))
+with(metadata_ordinations, plot(scores(lograt_pca, display = "sites"), col = colvec[OxCond], pch = shapevec[SizeFraction], cex = 1.5, cex.lab = .8, cex.axis = .8, xlab = paste0('PC1 ', round(lograt_variances[1,2]*100,2),'%'), ylab = "", yaxt='n', xlim=c(-60,60)))
 plot(pca_sppfit_trim, p.max = 0.001, col = "black", cex = 0.6)
 # annotate the 3 clusters of ASVs in panel D
 text(x=c(0), y=c(45), labels=c("Cluster I"), adj = 0.5, font = 2, cex = 0.8)
 text(x=c(50), y=c(30), labels=c("Cluster II"), adj = 0.5, font = 2, cex = 0.8)
 text(x=c(48), y=c(-35), labels=c("Cluster III"), adj = 0.5, font = 2, cex = 0.8)
+text(x=c(-48), y=c(-18), labels=c("Cluster IV"), adj = 0.5, font = 2, cex = 0.8)
+text(x=c(-48), y=c(10), labels=c("Cluster V"), adj = 0.5, font = 2, cex = 0.8)
 title("D", line = -1, adj = 0.02)
 # Add legend
 par(op) # Leave the last plot
 op <- par(usr=c(0,1,0,1), # Reset the coordinates
           xpd=NA)         # Allow plotting outside the plot region
 legend(-0.018,.57, c("PA", "FL", "Oxycline", "Shallow Anoxic", "Euxinic"), col=c("black", "black","blue", "red", "brown4"), pch = c(16, 17, 15, 15, 15), box.col=NA, cex = .8, horiz = T, x.intersp = c(0.3), text.width = c(0, 0.18, 0.18, 0.18, 0.2))
+
 dev.off()
 
 ```
@@ -1182,7 +1182,7 @@ fit_r2vals <- pca_sppfit$vectors$r %>%
   rownames_to_column("ASVID") %>% 
   dplyr::rename("r2vals" = ".")
 
-# only keep species with p-val < 0.001 and r2 value >0.65
+# only keep species with p-val < 0.001 and r2 value >0.6
 fit_spp <- pca_sppfit %>% 
   scores(., display = "vectors") %>% 
   as.data.frame() %>% 
@@ -1190,8 +1190,8 @@ fit_spp <- pca_sppfit %>%
   full_join(., fit_pvals, by = "ASVID") %>% 
   full_join(., fit_r2vals, by = "ASVID") %>% 
   filter(pvals < 0.001) %>%
-  filter(r2vals > 0.65) 
-# --> filters to 64 species
+  filter(r2vals > 0.6) 
+# --> filters to 107 species
 
 # put in ASV identifying information
 pca_sig_ASVs <- taxonomy %>% 
@@ -1203,6 +1203,10 @@ pca_sig_ASVs <- pca_sig_ASVs %>%
  arrange(desc(PC2))
 
 pca_sig_ASVs
+
+# the vegan plot also scales the species scores to fit the current plot (which is why PC values don't match what is seen in plot) Get these scaled PC values
+ordiArrowMul(lograt_pca, display = "species") #7.636856
+ordiArrowMul(pca_sppfit, display = "vectors") #0.8291121
 
 # export as table
 write.csv(pca_sig_ASVs, file="stats_results/pca_sig_ASVs.csv", row.names=FALSE)
