@@ -460,10 +460,15 @@ euk_divisions_bubbleplot_color <- ggplot(otu_table_mean_ra,aes (x = as.character
   labs(size="Relative Abundance", color = "Redox Condition") +
    scale_color_manual(values = c("blue", "red", "brown4")) +
   theme_bw() +
-  theme(axis.text.x = element_text(size=10),
-        axis.text.y = element_text(size=10),
-        axis.title.x= element_text(size=12),
-        axis.title.y= element_text(size=12))
+  theme(axis.text = element_text(size=8),
+        axis.text.x = element_text(size=8, angle = 45, hjust = 1),
+        axis.title = element_text(size=8),
+        legend.title = element_text(size=8),
+        legend.text = element_text(size=8),
+        strip.text = element_text(size = 8),
+        legend.margin=margin(0,0,0,2),
+        legend.box.margin=margin(-10,-10,-10,-10),
+        plot.margin=grid::unit(c(0,0,0,0), "mm"))
 
 euk_divisions_bubbleplot_color
 ```
@@ -471,9 +476,9 @@ euk_divisions_bubbleplot_color
 Save figure
 ```{r}
 # set explicit panel size so they will be consistent for all figures
-euk_divisions_bubbleplot_color <- set_panel_size(euk_divisions_bubbleplot_color, width  = unit(1.7, "in"), height = unit(5.5, "in"))  
+euk_divisions_bubbleplot_color <- set_panel_size(euk_divisions_bubbleplot_color, width  = unit(22, "mm"), height = unit(100, "mm"))  
 
-ggsave(filename = "Figures/euk_divisions_bubbleplot_color.eps", plot = euk_divisions_bubbleplot_color, units = c("in"), width = 14, height = 8, dpi = 300)
+ggsave(filename = "Figures/euk_divisions_bubbleplot_color.eps", plot = euk_divisions_bubbleplot_color, units = c("mm"), width = 180, height = 125, dpi = 300)
 ```
 
 
@@ -520,6 +525,25 @@ otu_table_mean_ra$Mean_RA[otu_table_mean_ra$Mean_RA == 0] <- NA
 otu_table_mean_ra
 ```
 
+Shorten some labels to make space in plot
+```{r}
+otu_table_mean_ra[otu_table_mean_ra == c("Ciliophora Cyclotrichium_like_organism Cyclotrichium_like_organism_X")] <- c("Cilio. Cyclotrichium_like Cyclotrichium_like")
+
+otu_table_mean_ra[otu_table_mean_ra == c("Apicomplexa Gregarinomorphea Gregarines_GRE2")] <- c("Apicom. Gregarinomorphea GRE2")
+
+otu_table_mean_ra[otu_table_mean_ra == c("Apicomplexa Gregarinomorphea Eugregarinorida")] <- c("Apicom. Gregarinomorphea Eugregarinorida")
+
+otu_table_mean_ra[otu_table_mean_ra == c("Apicomplexa Coccidiomorphea Agamococcidiorida")] <- c("Apicom. Coccidiomorphea Agamococcidiorida")
+
+otu_table_mean_ra[otu_table_mean_ra == c("Dinoflagellata Ellobiophyceae Thalassomycetales")] <- c("Dino. Ellobiophyceae Thalassomycetales")
+
+otu_table_mean_ra[otu_table_mean_ra == c("Ciliophora Oligohymenophorea Scuticociliatia_1")] <- c("Cilio. Oligohymenophorea Scuticociliatia_1")
+
+otu_table_mean_ra[otu_table_mean_ra == c("Apicomplexa Apicomplexa_X Apicomplexa_XX")] <- c("Apicom. Apicomplexa_X Apicomplexa_XX")
+
+otu_table_mean_ra
+```
+
 
 ### Bubble Plot of Orders within Alveolata
 
@@ -527,6 +551,7 @@ otu_table_mean_ra
 # reorder some factors to make them plot in the order I want
 otu_table_mean_ra$OxCond <- factor(otu_table_mean_ra$OxCond, levels = c("Oxycline", "ShallowAnoxic", "Euxinic"))
 otu_table_mean_ra$SizeFraction <- factor(otu_table_mean_ra$SizeFraction, levels = c("PA", "FL"))
+
 
 alveolata_bubbleplot_color <- ggplot(otu_table_mean_ra,aes (x = as.character(Depth), y = reorder(Descriptive, Mean_RA, function(x){sum(x,na.rm = TRUE)}), color = OxCond)) + 
   geom_point(aes(size =Mean_RA))+
@@ -538,10 +563,15 @@ alveolata_bubbleplot_color <- ggplot(otu_table_mean_ra,aes (x = as.character(Dep
   labs(size="Relative Abundance", color = "Redox Condition") +
    scale_color_manual(values = c("blue", "red", "brown4")) +
   theme_bw() +
-  theme(axis.text.x = element_text(size=10),
-        axis.text.y = element_text(size=10),
-        axis.title.x= element_text(size=12),
-        axis.title.y= element_text(size=12))
+  theme(axis.text = element_text(size=8),
+        axis.text.x = element_text(size=8, angle = 45, hjust = 1),
+        axis.title = element_text(size=8),
+        legend.title = element_text(size=8),
+        legend.text = element_text(size=8),
+        strip.text = element_text(size = 8),
+        legend.margin=margin(0,0,0,2),
+        legend.box.margin=margin(-10,-10,-10,-10),
+        plot.margin=grid::unit(c(0,0,0,0), "mm"))
 
 alveolata_bubbleplot_color
 ```
@@ -549,9 +579,9 @@ alveolata_bubbleplot_color
 Save figure
 ```{r}
 # set explicit panel size so they will be consistent for all figures
-alveolata_bubbleplot_color <- set_panel_size(alveolata_bubbleplot_color, width  = unit(1.7, "in"), height = unit(7, "in"))  
+alveolata_bubbleplot_color <- set_panel_size(alveolata_bubbleplot_color, width  = unit(20, "mm"), height = unit(125, "mm"))  
 
-ggsave(filename = "Figures/alveolata_bubbleplot_color.eps", plot = alveolata_bubbleplot_color, units = c("in"), width = 14, height = 8, dpi = 300)
+ggsave(filename = "Figures/alveolata_bubbleplot_color.eps", plot = alveolata_bubbleplot_color, units = c("mm"), width = 180, height = 150, dpi = 300)
 ```
 
 
@@ -575,7 +605,7 @@ otu_table_mean_ra <- left_join(rhizaria_df, as_tibble(taxonomy, rownames = "ASV"
 otu_table_mean_ra
 ```
 
-Some manual curating for plottin
+Some manual curating for plotting
 ```{r}
 # Make a new column that has descriptive taxonomy
 otu_table_mean_ra$Descriptive <- paste(otu_table_mean_ra$Division, otu_table_mean_ra$Class, otu_table_mean_ra$Order)
@@ -602,6 +632,44 @@ otu_table_mean_ra
 ```
 
 
+Shorten some labels to make space in plot
+```{r}
+otu_table_mean_ra[otu_table_mean_ra == c("Radiolaria Acantharea Arthracanthida-Symphyacanthida")] <- c("Radiolaria Acantharea A-S")
+
+otu_table_mean_ra[otu_table_mean_ra == c("Cercozoa Chlorarachniophyceae Chlorarachniophyceae_X")] <- c("Cercozoa Chlor. Chlor._X")
+
+otu_table_mean_ra[otu_table_mean_ra == c("Cercozoa Filosa-Thecofilosea Filosa-Thecofilosea_X")] <- c("Cercozoa F-T F-T_X")
+
+otu_table_mean_ra[otu_table_mean_ra == c("Cercozoa Filosa-Granofilosea Filosa-Granofilosea_X")] <- c("Cercozoa F-G. F-G._X")
+
+otu_table_mean_ra[otu_table_mean_ra == c("Cercozoa Chlorarachniophyceae Chlorarachnida")] <- c("Cercozoa Chlor. Chlorarachnida")
+
+otu_table_mean_ra[otu_table_mean_ra == c("Cercozoa Filosa-Imbricatea Thaumatomonadida")] <- c("Cercozoa F-I Thaumatomonadida")
+
+otu_table_mean_ra[otu_table_mean_ra == c("Cercozoa Filosa-Imbricatea Filosa-Imbricatea_X")] <- c("Cercozoa F-I F-I_X")
+
+otu_table_mean_ra[otu_table_mean_ra == c("Cercozoa Endomyxa-Phytomyxea Phagomyxida")] <- c("Cercozoa E-P Phagomyxida")
+
+otu_table_mean_ra[otu_table_mean_ra == c("Cercozoa Filosa-Sarcomonadea Cercomonadida")] <- c("Cercozoa F-S Cercomonadida")
+
+otu_table_mean_ra[otu_table_mean_ra == c("Cercozoa Novel-clade-10-12 Novel-clade-12")] <- c("Cercozoa N-C−10−12 N-C−12")
+
+otu_table_mean_ra[otu_table_mean_ra == c("Cercozoa Filosa-Thecofilosea Ventricleftida")] <- c("Cercozoa F-T Ventricleftida")
+
+otu_table_mean_ra[otu_table_mean_ra == c("Cercozoa Filosa-Imbricatea Marimonadida")] <- c("Cercozoa F-I Marimonadida")
+
+otu_table_mean_ra[otu_table_mean_ra == c("Cercozoa Filosa-Thecofilosea Cryomonadida")] <- c("Cercozoa F-T Cryomonadida")
+
+otu_table_mean_ra[otu_table_mean_ra == c("Cercozoa Filosa-Sarcomonadea Glissomonadida")] <- c("Cercozoa F-S Glissomonadida")
+
+otu_table_mean_ra[otu_table_mean_ra == c("Cercozoa Filosa-Imbricatea Euglyphida")] <- c("Cercozoa F-I Euglyphida")
+
+
+otu_table_mean_ra
+```
+
+
+
 ### Bubble Plot of Orders within Rhizaria
 
 ```{r}
@@ -619,10 +687,15 @@ rhizaria_bubbleplot_color <- ggplot(otu_table_mean_ra,aes (x = as.character(Dept
   labs(size="Relative Abundance", color = "Redox Condition") +
    scale_color_manual(values = c("blue", "red", "brown4")) +
   theme_bw() +
-  theme(axis.text.x = element_text(size=10),
-        axis.text.y = element_text(size=10),
-        axis.title.x= element_text(size=12),
-        axis.title.y= element_text(size=12))
+  theme(axis.text = element_text(size=8),
+        axis.text.x = element_text(size=8, angle = 45, hjust = 1),
+        axis.title = element_text(size=8),
+        legend.title = element_text(size=8),
+        legend.text = element_text(size=8),
+        strip.text = element_text(size = 8),
+        legend.margin=margin(0,0,0,2),
+        legend.box.margin=margin(-10,-10,-10,-10),
+        plot.margin=grid::unit(c(0,0,0,0), "mm"))
 
 rhizaria_bubbleplot_color
 ```
@@ -630,9 +703,9 @@ rhizaria_bubbleplot_color
 Save figure
 ```{r}
 # set explicit panel size so they will be consistent for all figures
-rhizaria_bubbleplot_color <- set_panel_size(rhizaria_bubbleplot_color, width  = unit(1.7, "in"), height = unit(5, "in"))  
+rhizaria_bubbleplot_color <- set_panel_size(rhizaria_bubbleplot_color, width  = unit(20, "mm"), height = unit(100, "mm"))  
 
-ggsave(filename = "Figures/rhizaria_bubbleplot_color.eps", plot = rhizaria_bubbleplot_color, units = c("in"), width = 14, height = 8, dpi = 300)
+ggsave(filename = "Figures/rhizaria_bubbleplot_color.eps", plot = rhizaria_bubbleplot_color, units = c("mm"), width = 180, height = 125, dpi = 300)
 ```
 
 
@@ -680,6 +753,22 @@ otu_table_mean_ra$Mean_RA[otu_table_mean_ra$Mean_RA == 0] <- NA
 otu_table_mean_ra
 ```
 
+Shorten some labels to make space in plot
+```{r}
+otu_table_mean_ra[otu_table_mean_ra == c("Choanoflagellida Choanoflagellatea Acanthoecida")] <- c("Choanof. Ch. Acanthoecida")
+
+otu_table_mean_ra[otu_table_mean_ra == c("Choanoflagellida Choanoflagellatea Craspedida")] <- c("Choanof. Ch. Craspedida")
+
+otu_table_mean_ra[otu_table_mean_ra == c("Choanoflagellida Choanoflagellatea Choanoflagellatea_X")] <- c("Choanof. Ch. Choanoflagellatea_X")
+
+otu_table_mean_ra[otu_table_mean_ra == c("Choanoflagellida Choanoflagellida_X Choanoflagellida_XX")] <- c("Choanof. Choanof._X Choanof._XX")
+
+otu_table_mean_ra[otu_table_mean_ra == c("Mesomycetozoa Ichthyosporea Ichthyosphonida")] <- c("Mesomy. Ichthyosporea Ichthyosphonida")
+
+otu_table_mean_ra[otu_table_mean_ra == c("Opisthokonta_X Opisthokonta_XX Opisthokonta_XXX")] <- c("Opis._X Opis._XX Opis._XXX")
+
+otu_table_mean_ra
+```
 
 ### Bubble Plot of Orders within Opisthokonta
 
@@ -698,10 +787,15 @@ opithokonta_bubbleplot_color <- ggplot(otu_table_mean_ra,aes (x = as.character(D
   labs(size="Relative Abundance", color = "Redox Condition") +
    scale_color_manual(values = c("blue", "red", "brown4")) +
   theme_bw() +
-  theme(axis.text.x = element_text(size=10),
-        axis.text.y = element_text(size=10),
-        axis.title.x= element_text(size=12),
-        axis.title.y= element_text(size=12))
+  theme(axis.text = element_text(size=8),
+        axis.text.x = element_text(size=8, angle = 45, hjust = 1),
+        axis.title = element_text(size=8),
+        legend.title = element_text(size=8),
+        legend.text = element_text(size=8),
+        strip.text = element_text(size = 8),
+        legend.margin=margin(0,0,0,2),
+        legend.box.margin=margin(-10,-10,-10,-10),
+        plot.margin=grid::unit(c(0,0,0,0), "mm"))
 
 opithokonta_bubbleplot_color
 ```
@@ -709,9 +803,9 @@ opithokonta_bubbleplot_color
 Save figure
 ```{r}
 # set explicit panel size so they will be consistent for all figures
-opithokonta_bubbleplot_color <- set_panel_size(opithokonta_bubbleplot_color, width  = unit(1.7, "in"), height = unit(5, "in"))  
+opithokonta_bubbleplot_color <- set_panel_size(opithokonta_bubbleplot_color, width  = unit(20, "mm"), height = unit(100, "mm"))  
 
-ggsave(filename = "Figures/opithokonta_bubbleplot_color.eps", plot = opithokonta_bubbleplot_color, units = c("in"), width = 14, height = 8, dpi = 300)
+ggsave(filename = "Figures/opithokonta_bubbleplot_color.eps", plot = opithokonta_bubbleplot_color, units = c("mm"), width = 180, height = 125, dpi = 300)
 ```
 
 
@@ -759,6 +853,30 @@ otu_table_mean_ra$Mean_RA[otu_table_mean_ra$Mean_RA == 0] <- NA
 otu_table_mean_ra
 ```
 
+Shorten some labels to make space in plot
+```{r}
+otu_table_mean_ra[otu_table_mean_ra == c("Stramenopiles_X Stramenopiles_XX")] <- c("Strameno._X Strameno._XX")
+
+otu_table_mean_ra[otu_table_mean_ra == c("Stramenopiles_X Stramenopiles_X-Group-7")] <- c("Strameno._X Strameno._X−Group−7")
+
+
+otu_table_mean_ra[otu_table_mean_ra == c("Stramenopiles_X MAST-21")] <- c("Strameno._X MAST−21")
+
+
+otu_table_mean_ra[otu_table_mean_ra == c("Stramenopiles_X MAST-25")] <- c("Strameno._X MAST-25")
+
+
+otu_table_mean_ra[otu_table_mean_ra == c("Stramenopiles_X Stramenopiles_X-Group-4")] <- c("Strameno._X Strameno._X−Group−4")
+
+
+otu_table_mean_ra[otu_table_mean_ra == c("Stramenopiles_X Stramenopiles_X-Group-6")] <- c("Strameno._X Strameno._X−Group−6")
+
+
+otu_table_mean_ra[otu_table_mean_ra == c("Stramenopiles_X Stramenopiles_X-Group-8")] <- c("Strameno._X Strameno._X−Group−8")
+
+
+otu_table_mean_ra
+```
 
 ### Bubble Plot of Orders within Stramenopiles
 
@@ -777,10 +895,15 @@ stramenopiles_bubbleplot_color <- ggplot(otu_table_mean_ra,aes (x = as.character
   labs(size="Relative Abundance", color = "Redox Condition") +
    scale_color_manual(values = c("blue", "red", "brown4")) +
   theme_bw() +
-  theme(axis.text.x = element_text(size=10),
-        axis.text.y = element_text(size=10),
-        axis.title.x= element_text(size=12),
-        axis.title.y= element_text(size=12))
+  theme(axis.text = element_text(size=8),
+        axis.text.x = element_text(size=8, angle = 45, hjust = 1),
+        axis.title = element_text(size=8),
+        legend.title = element_text(size=8),
+        legend.text = element_text(size=8),
+        strip.text = element_text(size = 8),
+        legend.margin=margin(0,0,0,2),
+        legend.box.margin=margin(-10,-10,-10,-10),
+        plot.margin=grid::unit(c(0,0,0,0), "mm"))
 
 stramenopiles_bubbleplot_color
 ```
@@ -788,9 +911,9 @@ stramenopiles_bubbleplot_color
 Save figure
 ```{r}
 # set explicit panel size so they will be consistent for all figures
-stramenopiles_bubbleplot_color <- set_panel_size(stramenopiles_bubbleplot_color, width  = unit(1.7, "in"), height = unit(5.5, "in"))  
+stramenopiles_bubbleplot_color <- set_panel_size(stramenopiles_bubbleplot_color, width  = unit(22, "mm"), height = unit(115, "mm"))  
 
-ggsave(filename = "Figures/stramenopiles_bubbleplot_color.eps", plot = stramenopiles_bubbleplot_color, units = c("in"), width = 14, height = 10, dpi = 300)
+ggsave(filename = "Figures/stramenopiles_bubbleplot_color.eps", plot = stramenopiles_bubbleplot_color, units = c("mm"), width = 180, height = 150, dpi = 300)
 ```
 
 
@@ -853,28 +976,39 @@ shannons_mean
 shannons_mean$OxCond <- factor(shannons_mean$OxCond, levels = c("Oxycline", "ShallowAnoxic", "Euxinic"))
 shannons_mean$SizeFraction <- factor(shannons_mean$SizeFraction, levels = c("PA", "FL"))
 
+ytitle <- expression(paste("Shannon's Diversity Index (",italic("H'"),")"))
+
 shannonsplot <- ggplot(shannons_mean, aes(x = Depth, y = Shannons, color = OxCond)) +
   geom_line(size=1, color = "black", lty = "dotted") +
   geom_point(size=3, shape = c(16)) +
-  scale_x_continuous(name = "depth [m]") +
+  labs(y= ytitle, x = "Depth (m)") +
   scale_x_reverse(expand = c(0, 0)) +
   coord_flip(xlim = c(910, 100)) + 
   theme_bw() +
-  theme(legend.position = "right") +
+  theme(legend.position = "right",
+        axis.text = element_text(size=8),
+        axis.text.x = element_text(size=8),
+        axis.title = element_text(size=8),
+        legend.title = element_text(size=8),
+        legend.text = element_text(size=8),
+        strip.text = element_text(size = 8),
+        legend.margin=margin(0,0,0,2)) +
   facet_wrap(Season~SizeFraction, drop= TRUE, ncol = 4) +
   scale_color_manual(values = c("blue", "red", "brown4")) +
   labs(color = "Redox Condition")
 
 shannonsplot
 
+
 ```
 
 Export Plot
 ```{r}
 # set explicit panel size so they will be consistent for all figures
-shannonsplot <- set_panel_size(shannonsplot, width  = unit(1.7, "in"), height = unit(3.5, "in"))  
+shannonsplot <- set_panel_size(shannonsplot,  width  = unit(22, "mm"), height = unit(60, "mm"))  
 
-ggsave(filename = "Figures/shannonsplot.eps", plot = shannonsplot, units = c("in"), width = 14, height = 11, dpi = 300)
+ggsave(filename = "Figures/shannonsplot.eps", plot = shannonsplot, units = c("mm"), width = 180, height = 80, dpi = 300)
+
 ```
 
 
@@ -1048,10 +1182,9 @@ pca_envfit_FlagAbun <- envfit(lograt_pca~FlagAbun, metadata_ordinations, permuta
 ```
 
 
-Next, trim the sppfit vegan object to just include those species with r2 value greater than 0.65
+Next, trim the sppfit vegan object to just include those species with r2 value greater than 0.60
 I got this function from [here](https://www.researchgate.net/post/How_do_I_set_cutoff_r_values_for_plotting_arrows_from_function_envfit_in_R).
 Later, when plotting, I can also trim by p-value/
-Use r2 cutoff of 0.65:
 ```{r}
 #__FUNCTION: select.envfit__#
 # function (select.envit) filters the resulting list of function (envfit) based on their p values. This allows to display only significant values in the final plot.
@@ -3242,15 +3375,6 @@ grph.pos_df_vert %>%
 ```
 
 
-### Save and re-load environment
-```{r}
-# save.image("EnvironmentBackups/CariacoEuks_postanalysis_vars_upto_networkparameters.RData")
-```
-
-Or load if coming back
-```{r}
-load("EnvironmentBackups/CariacoEuks_postanalysis_vars_upto_networkparameters.RData")
-```
 
 
 ### Analyze node-level measures for keystone-ness
@@ -3335,11 +3459,19 @@ p2 <- ggplot(fulldateset_node_measures, aes(x = degree, y = betweenness, shape =
   scale_y_continuous(trans='log10') +
   scale_color_manual(values = mycolors, name = "") +
   scale_shape_manual(values = c(19,17,15,18), name = "") +
-  theme(legend.title=element_blank()) +
+  theme(legend.title=element_blank(),
+        axis.text = element_text(size=8),
+        axis.text.x = element_text(size=8, angle = 45, hjust = 1),
+        axis.title = element_text(size=8),
+        legend.text = element_text(size=8),
+        strip.text = element_text(size = 8),
+        legend.margin=margin(0,0,0,2),
+        legend.box.margin=margin(-10,-10,-10,-10),
+        plot.margin=grid::unit(c(0,0,0,0), "mm")) +
   theme_bw() 
 p2
 
-ggsave("figures/betweenness_vs_degree.eps",p2, width = 12, height = 8, units = c("in"))
+ggsave("figures/betweenness_vs_degree.eps",p2, width = 10, height = 6, units = c("in"))
 
 ```
 
@@ -3381,10 +3513,12 @@ de_df %>%
 
 
   
-  
-  
+### Save and re-load environment
+```{r}
+# save.image("EnvironmentBackups/CariacoEuks_postanalysis_vars_upto_nodelevelmeasures.RData")
+```
 
-
-
-
-
+Or load if coming back
+```{r}
+load("EnvironmentBackups/CariacoEuks_postanalysis_vars_upto_nodelevelmeasures.RData")
+```
