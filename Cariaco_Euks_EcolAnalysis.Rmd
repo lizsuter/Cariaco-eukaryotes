@@ -1460,6 +1460,14 @@ ps_bac_pruned <-  prune_taxa(keepTaxa, ps_bac)
 ps_bac_ra_pruned
 ps_bac_pruned
 
+# Retain top 100 most abundant bacteria
+bac_top100 <- names(sort(taxa_sums(ps_bac_ra), TRUE)[1:100])
+ps_bac_top100 <-  prune_taxa(bac_top100, ps_bac)
+
+# Retain top 150 most abundant bacteria
+bac_top150 <- names(sort(taxa_sums(ps_bac_ra), TRUE)[1:150])
+ps_bac_top150 <-  prune_taxa(bac_top150, ps_bac)
+
 # Archaea
 x <- taxa_sums(ps_arch_ra)
 # keepTaxa <-  base::which(x  > .05)
@@ -1469,6 +1477,15 @@ ps_arch_pruned <-  prune_taxa(keepTaxa, ps_arch)
 ps_arch_ra_pruned
 ps_arch_pruned
 
+# Retain top 100 most abundant archaea
+arch_top100 <- names(sort(taxa_sums(ps_arch_ra), TRUE)[1:100])
+ps_arch_top100 <-  prune_taxa(arch_top100, ps_arch)
+
+# Retain top 150 most abundant archaea
+arch_top150 <- names(sort(taxa_sums(ps_arch_ra), TRUE)[1:150])
+ps_arch_top150 <-  prune_taxa(arch_top150, ps_arch)
+
+
 # Eukaryotes
 x <- taxa_sums(ps_ra)
 # keepTaxa <-  base::which(x  > .05)
@@ -1477,8 +1494,18 @@ ps_euk_ra_pruned <-  prune_taxa(keepTaxa, ps_ra)
 ps_euk_pruned <-  prune_taxa(keepTaxa, ps)
 ps_euk_ra_pruned
 ps_euk_pruned
+
+# Retain top 100 most abundant archaea
+euk_top100 <- names(sort(taxa_sums(ps_ra), TRUE)[1:100])
+ps_euk_top100 <-  prune_taxa(euk_top100, ps)
+
+# Retain top 150 most abundant archaea
+euk_top150 <- names(sort(taxa_sums(ps_ra), TRUE)[1:150])
+ps_euk_top150 <-  prune_taxa(euk_top150, ps)
 ```
 Trimmed to 124 bacteria OTUs, 52 archaea OTUs, and 123 eukaryotic ASVs (299 total). Proceed with this dataset of the most abundant OTUs for correlations and network analyses...
+
+Update Oct 2021- also added some lines to pull out top 100 and top 150 OTUs/ ASVs in order to later normalize network analyses for network size
 
 To do the multi-domain analysis, the sample names from each phyloseq object must match. These currently have "B" for bacteria, A, E etc. Remove this letter from sample names so that "AE2a247B", "AA2a247B", "AB2a247B" all become just "Type" from the metadata sheet [IntNov1FL in this case- for Interface, November, rep 1, free-living]. 
 
@@ -1499,13 +1526,18 @@ samplekey_A <- samplekey_A %>% arrange(factor(SampleID_arch, levels = colnames(o
 sample_names(ps_arch_ra_pruned) <- samplekey_A$Type
 # and ps_arch_pruned
 sample_names(ps_arch_pruned) <- samplekey_A$Type
-
+# and ps_arch_top100
+sample_names(ps_arch_top100) <- samplekey_A$Type
+# and ps_arch_top150
+sample_names(ps_arch_top150) <- samplekey_A$Type
 
 # Bacteria
 samplekey_B <- filter(samplekey, SampleID_bac  %in% colnames(otu_table(ps_bac_ra_pruned)))
 samplekey_B <- samplekey_B %>% arrange(factor(SampleID_bac, levels = colnames(otu_table(ps_bac_ra_pruned))))
 sample_names(ps_bac_ra_pruned) <- samplekey_B$Type
 sample_names(ps_bac_pruned) <- samplekey_B$Type
+sample_names(ps_bac_top100) <- samplekey_B$Type
+sample_names(ps_bac_top150) <- samplekey_B$Type
 
 
 # Eukaryotes
@@ -1513,7 +1545,8 @@ samplekey_E <- filter(samplekey, SampleID_euk  %in% colnames(otu_table(ps_euk_ra
 samplekey_E <- samplekey_E %>% arrange(factor(SampleID_euk, levels = colnames(otu_table(ps_euk_ra_pruned))))
 sample_names(ps_euk_ra_pruned) <- samplekey_E$Type
 sample_names(ps_euk_pruned) <- samplekey_E$Type
-
+sample_names(ps_euk_top100) <- samplekey_E$Type
+sample_names(ps_euk_top150) <- samplekey_E$Type
 
 ```
 
@@ -1527,6 +1560,8 @@ alldomains_df
 twodomains_df <- bind_rows(data.frame(otu_table(ps_bac_pruned)), data.frame(otu_table(ps_arch_pruned)))
 twodomains_df
 ```
+
+
 
 Change row names from "denovoXXX" to meaningful names
 ```{r}
@@ -2209,9 +2244,17 @@ ps_bac_ra_pruned_3domains <- prune_samples(all_common, ps_bac_ra_pruned)
 ps_arch_ra_pruned_3domains <- prune_samples(all_common, ps_arch_ra_pruned)
 ps_euk_ra_pruned_3domains <- prune_samples(all_common, ps_euk_ra_pruned)
 
+# do same but make a top 300 otu table (top 100 from each domain)
+ps_bac_pruned_3domains_top100 <- prune_samples(all_common, ps_bac_top100)
+ps_arch_pruned_3domains_top100 <- prune_samples(all_common, ps_arch_top100)
+ps_euk_pruned_3domains_top100 <- prune_samples(all_common, ps_euk_top100)
 
+# make sure samples are in same order
 otu_table(ps_arch_pruned_3domains) <- otu_table(ps_arch_pruned_3domains)[,sample_names(ps_bac_ra_pruned_3domains)]
 otu_table(ps_euk_pruned_3domains) <- otu_table(ps_euk_pruned_3domains)[,sample_names(ps_bac_ra_pruned_3domains)]
+
+otu_table(ps_arch_pruned_3domains_top100) <- otu_table(ps_arch_pruned_3domains_top100)[,sample_names(ps_bac_pruned_3domains_top100)]
+otu_table(ps_euk_pruned_3domains_top100) <- otu_table(ps_euk_pruned_3domains_top100)[,sample_names(ps_bac_pruned_3domains_top100)]
 
 sample_data(ps_bac_pruned_3domains)
 sample_data(ps_arch_pruned_3domains)
@@ -2221,7 +2264,7 @@ sample_data(ps_euk_pruned_3domains)
 
 
 ```{r}
-#Run Spieceasi
+#Run Spieceasi on 3 domain dataset based on 5% RA cutoff
 pargs <- list(seed=10010)
 se <- spiec.easi(list(ps_bac_pruned_3domains, ps_arch_pruned_3domains, ps_euk_pruned_3domains), method='glasso', lambda.min.ratio=1e-2, nlambda=100, pulsar.params=pargs)
 getStability(se)
@@ -2229,6 +2272,15 @@ getStability(se)
 
 the above takes a while to run (20-30 mins). Using parameters above, the stability along the lambda path crosses the 0.05 threshold and the final stability value (0.044) is sufficiently close to 0.05
 
+```{r}
+#Run Spieceasi on 3 domain dataset with top 100 from each domain
+pargs <- list(seed=10010)
+se_3domains_top100 <- spiec.easi(list(ps_bac_pruned_3domains_top100, ps_arch_pruned_3domains_top100, ps_euk_pruned_3domains_top100), method='glasso', lambda.min.ratio=1e-2, nlambda=100, pulsar.params=pargs)
+getStability(se_3domains_top100)
+```
+## 10/27 STOPPED HERE
+SAVED DATASET AS 
+save.image("EnvironmentBackups/CariacoEuks_postanalysis_vars_revisions2.RData")
 
 
 ```{r}
