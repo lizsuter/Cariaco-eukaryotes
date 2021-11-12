@@ -1,7 +1,7 @@
 ---
 title: "Ecologicall Analysis of Cariaco Eukaryotic 18S libraries"
 author: "Liz Suter"
-date: "Started 5/26/2020; Completed summer 2021"
+date: "Started 5/26/2020; Completed summer 2021; Revisions added Oct-Nov 2021"
 output: html_notebook
 editor_options: 
   chunk_output_type: inline
@@ -27,35 +27,6 @@ library(igraph)
 library(plotly)
 library(egg)
 library(ggvegan)
-
-
-# Helper functions from J. Cram https://biovcnet.github.io/_pages/NetworkScience_SparCC.nb
-pass <- function(x){x} 
-# Get lower triangle of the correlation matrix
-  get_lower_tri<-function(cormat){
-    cormat[upper.tri(cormat)] <- NA
-    return(cormat)
-  }
-# Get upper triangle of the correlation matrix
-  get_upper_tri <- function(cormat){
-    cormat[lower.tri(cormat)]<- NA
-    return(cormat)
-  }
-
-reorder_cormat <- function(cormat){
-# Use correlation between variables as distance
-dd <- as.dist((1-cormat)/2)
-hc <- hclust(dd)
-cormat <-cormat[hc$order, hc$order]
-}
-
-reorder_cor_and_p <- function(cormat, pmat){
-  dd <- as.dist((1-cormat)/2)
-  hc <- hclust(dd)
-  cormat <-cormat[hc$order, hc$order]
-  pmat <- pmat[hc$order, hc$order]
-  list(r = cormat, p = pmat)
-}
 
 # Report versions of packages
 sessionInfo()
@@ -959,12 +930,55 @@ shannons_mean <- shannons_mean[,unique(metadata$Replicate)]
 shannons_mean
 ```
 
+Get std deviation for each correspinding mean
+```{r}
+shannons_sd <-  
+  mutate(data.frame(shannons), "103A" = sd(select(data.frame(shannons), c("AE3a103A","AE3b103A")), na.rm = TRUE)) %>%
+  mutate(data.frame(shannons), "198A" = sd(select(data.frame(shannons), c("AE3b198A")), na.rm = TRUE))  %>% # Sample AE3a198A was removed
+  mutate(data.frame(shannons), "234A" = sd(select(data.frame(shannons), c("AE3a234A","AE3b234A")), na.rm = TRUE)) %>%
+  mutate(data.frame(shannons), "295A" = sd(select(data.frame(shannons), c("AE3a295A","AE3b295A")), na.rm = TRUE)) %>%
+  mutate(data.frame(shannons), "314A" = sd(select(data.frame(shannons), c("AE3a314A")), na.rm = TRUE)) %>%  # Sample AE3b314A was removed
+  mutate(data.frame(shannons), "900AM" = sd(select(data.frame(shannons), c("AE3a900AM","AE1b900AM")), na.rm = TRUE)) %>%
+  mutate(data.frame(shannons), "103B" = sd(select(data.frame(shannons), c("AE3a103B","AE3b103B")), na.rm = TRUE)) %>%
+  mutate(data.frame(shannons), "198B" = sd(select(data.frame(shannons), c("AE3a198B","AE3b198B")), na.rm = TRUE)) %>%
+  mutate(data.frame(shannons), "234B" = sd(select(data.frame(shannons), c("AE3a234B","AE3b234B")), na.rm = TRUE)) %>%
+  mutate(data.frame(shannons), "295B" = sd(select(data.frame(shannons), c("AE3a295B","AE3b295B")), na.rm = TRUE)) %>%
+  mutate(data.frame(shannons), "314B" = sd(select(data.frame(shannons), c("AE3a314B","AE3b314B")), na.rm = TRUE)) %>%
+  mutate(data.frame(shannons), "900BM" = sd(select(data.frame(shannons), c("AE3a900BM","AE1b900BM")), na.rm = TRUE)) %>%
+  mutate(data.frame(shannons), "143A" = sd(select(data.frame(shannons), c("AE2a143A","AE2b143A")), na.rm = TRUE)) %>%
+  mutate(data.frame(shannons), "200A" = sd(select(data.frame(shannons), c("AE2b200A")), na.rm = TRUE)) %>% # AE2a200A was removed
+  mutate(data.frame(shannons), "237A" = sd(select(data.frame(shannons), c("AE2a237A","AE2b237A")), na.rm = TRUE)) %>%
+  mutate(data.frame(shannons), "247A" = sd(select(data.frame(shannons), c("AE2a247A","AE2b247A")), na.rm = TRUE)) %>%
+  mutate(data.frame(shannons), "267A" = sd(select(data.frame(shannons), c("AE2a267A","AE2b267A")), na.rm = TRUE)) %>%
+  mutate(data.frame(shannons), "900AN" = sd(select(data.frame(shannons), c("AE2a900AN")), na.rm = TRUE)) %>% # AE2b900AN was removed
+  mutate(data.frame(shannons), "143B" = sd(select(data.frame(shannons), c("AE2a143B","AE2b143B")), na.rm = TRUE)) %>%
+  mutate(data.frame(shannons), "200B" = sd(select(data.frame(shannons), c("AE2b200B")), na.rm = TRUE)) %>% # AE2a200B was removed
+  mutate(data.frame(shannons), "237B" = sd(select(data.frame(shannons), c("AE2a237B","AE2b237B")), na.rm = TRUE)) %>%
+  mutate(data.frame(shannons), "247B" = sd(select(data.frame(shannons), c("AE2a247B","AE2b247B")), na.rm = TRUE)) %>%
+  mutate(data.frame(shannons), "267B" = sd(select(data.frame(shannons), c("AE2b267B")), na.rm = TRUE)) %>% # AE2a267B was removed
+  mutate(data.frame(shannons), "900BN" = sd(select(data.frame(shannons), c("AE2b900BN")), na.rm = TRUE)) # AE2a900BN was removed
+
+shannons_sd <- shannons_sd[,unique(metadata$Replicate)]
+shannons_sd[is.na(shannons_sd)] <- 0
+
+shannons_sd
+```
+
+
+
 ## Prepare data for plotting
 ```{r}
 # Pivot longer
 shannons_mean <- pivot_longer(shannons_mean, cols = unique(metadata$Replicate), names_to = "Replicate", values_to = "Shannons")
+shannons_sd <- pivot_longer(shannons_sd, cols = unique(metadata$Replicate), names_to = "Replicate", values_to = "StDev")
 
 # Join metadata
+shannons_mean <- left_join(shannons_mean, shannons_sd)
+
+# export this for table in manuscript
+write_csv(shannons_mean, "Figures/shannons.csv")
+
+# add metadata for plotting
 shannons_mean <- left_join(shannons_mean, unique(select(metadata, c("Replicate", "Depth", "SizeFraction", "Season", "OxCond", "Fluorescence", "BeamAtt", "O2", "Temp", "Salinity", "H2S", "ParticulateS", "TZVS", "CH4", "NO3", "NO2", "NH4", "PO4", "Chemoautotrophy", "BNP", "MicroAbun(x10^8 L^-1)", "FlagAbun(x10^5 L-1)", "VLP(x10^8 L-1)"))), by = "Replicate")
 
 shannons_mean
@@ -1450,6 +1464,7 @@ ps_arch_ra <- microbiome::transform(ps_arch, transform = "compositional")
 ### Filter low abundance species from full dataset
 
 Remove rows of glommed taxa from the full dataframe if their sum across all samples doesn't exceed 5% (RA > 0.05) 
+
 ```{r}
 # Bacteria
 x <- taxa_sums(ps_bac_ra)
@@ -1460,13 +1475,6 @@ ps_bac_pruned <-  prune_taxa(keepTaxa, ps_bac)
 ps_bac_ra_pruned
 ps_bac_pruned
 
-# Retain top 100 most abundant bacteria
-bac_top100 <- names(sort(taxa_sums(ps_bac_ra), TRUE)[1:100])
-ps_bac_top100 <-  prune_taxa(bac_top100, ps_bac)
-
-# Retain top 150 most abundant bacteria
-bac_top150 <- names(sort(taxa_sums(ps_bac_ra), TRUE)[1:150])
-ps_bac_top150 <-  prune_taxa(bac_top150, ps_bac)
 
 # Archaea
 x <- taxa_sums(ps_arch_ra)
@@ -1476,14 +1484,6 @@ ps_arch_ra_pruned <-  prune_taxa(keepTaxa, ps_arch_ra)
 ps_arch_pruned <-  prune_taxa(keepTaxa, ps_arch)
 ps_arch_ra_pruned
 ps_arch_pruned
-
-# Retain top 100 most abundant archaea
-arch_top100 <- names(sort(taxa_sums(ps_arch_ra), TRUE)[1:100])
-ps_arch_top100 <-  prune_taxa(arch_top100, ps_arch)
-
-# Retain top 150 most abundant archaea
-arch_top150 <- names(sort(taxa_sums(ps_arch_ra), TRUE)[1:150])
-ps_arch_top150 <-  prune_taxa(arch_top150, ps_arch)
 
 
 # Eukaryotes
@@ -1495,17 +1495,8 @@ ps_euk_pruned <-  prune_taxa(keepTaxa, ps)
 ps_euk_ra_pruned
 ps_euk_pruned
 
-# Retain top 100 most abundant archaea
-euk_top100 <- names(sort(taxa_sums(ps_ra), TRUE)[1:100])
-ps_euk_top100 <-  prune_taxa(euk_top100, ps)
-
-# Retain top 150 most abundant archaea
-euk_top150 <- names(sort(taxa_sums(ps_ra), TRUE)[1:150])
-ps_euk_top150 <-  prune_taxa(euk_top150, ps)
 ```
 Trimmed to 124 bacteria OTUs, 52 archaea OTUs, and 123 eukaryotic ASVs (299 total). Proceed with this dataset of the most abundant OTUs for correlations and network analyses...
-
-Update Oct 2021- also added some lines to pull out top 100 and top 150 OTUs/ ASVs in order to later normalize network analyses for network size
 
 To do the multi-domain analysis, the sample names from each phyloseq object must match. These currently have "B" for bacteria, A, E etc. Remove this letter from sample names so that "AE2a247B", "AA2a247B", "AB2a247B" all become just "Type" from the metadata sheet [IntNov1FL in this case- for Interface, November, rep 1, free-living]. 
 
@@ -1526,27 +1517,19 @@ samplekey_A <- samplekey_A %>% arrange(factor(SampleID_arch, levels = colnames(o
 sample_names(ps_arch_ra_pruned) <- samplekey_A$Type
 # and ps_arch_pruned
 sample_names(ps_arch_pruned) <- samplekey_A$Type
-# and ps_arch_top100
-sample_names(ps_arch_top100) <- samplekey_A$Type
-# and ps_arch_top150
-sample_names(ps_arch_top150) <- samplekey_A$Type
+
 
 # Bacteria
 samplekey_B <- filter(samplekey, SampleID_bac  %in% colnames(otu_table(ps_bac_ra_pruned)))
 samplekey_B <- samplekey_B %>% arrange(factor(SampleID_bac, levels = colnames(otu_table(ps_bac_ra_pruned))))
 sample_names(ps_bac_ra_pruned) <- samplekey_B$Type
 sample_names(ps_bac_pruned) <- samplekey_B$Type
-sample_names(ps_bac_top100) <- samplekey_B$Type
-sample_names(ps_bac_top150) <- samplekey_B$Type
-
 
 # Eukaryotes
 samplekey_E <- filter(samplekey, SampleID_euk  %in% colnames(otu_table(ps_euk_ra_pruned)))
 samplekey_E <- samplekey_E %>% arrange(factor(SampleID_euk, levels = colnames(otu_table(ps_euk_ra_pruned))))
 sample_names(ps_euk_ra_pruned) <- samplekey_E$Type
 sample_names(ps_euk_pruned) <- samplekey_E$Type
-sample_names(ps_euk_top100) <- samplekey_E$Type
-sample_names(ps_euk_top150) <- samplekey_E$Type
 
 ```
 
@@ -1597,7 +1580,6 @@ twodomains_df_full <- rbind(temp1, temp2)
 twodomains_df_full <- data.frame(twodomains_df_full)
 rownames(twodomains_df_full) <- twodomains_df_full$New_ID
 twodomains_df_full <- select(twodomains_df_full, -c("ID","New_ID"))
-
 
 ```
 
@@ -1796,7 +1778,6 @@ anoxictypes_bac <- unlist(c(unique(anoxictypes_bac)), use.names = FALSE)
 ps_bac_anoxic <-  prune_samples(anoxictypes_bac, ps_bac)
 ps_bac_ra_anoxic <-  prune_samples(anoxictypes_bac, ps_bac_ra)
 
-
 # Pull out anoxic layer archaea sample IDs
 anoxictypes_arch <- metadata %>% 
   filter(`Sample Name` %in% sample_names(ps_arch)) %>%
@@ -1807,7 +1788,6 @@ anoxictypes_arch <- unlist(c(unique(anoxictypes_arch)), use.names = FALSE)
 # Pull out all archaea from anoxic layer
 ps_arch_anoxic<-  prune_samples(anoxictypes_arch, ps_arch)
 ps_arch_ra_anoxic <-  prune_samples(anoxictypes_arch, ps_arch_ra)
-
 
 # Pull out anoxic layer eukaryotic sample IDs
 anoxictypes_euk <- metadata %>% 
@@ -1863,7 +1843,6 @@ samplekey_A <- samplekey_A %>% arrange(factor(SampleID_arch, levels = colnames(o
 sample_names(ps_arch_ra_anoxic_pruned) <- samplekey_A$Type
 # and ps_arch_pruned
 sample_names(ps_arch_anoxic_pruned) <- samplekey_A$Type
-
 
 # Bacteria
 samplekey_B <- filter(samplekey, SampleID_bac  %in% colnames(otu_table(ps_bac_ra_anoxic_pruned)))
@@ -1936,7 +1915,7 @@ alldomains_df_anoxic
 
 ### Filter low abundance species- euxinic depths only
 
-Pull out samples from shallow anoxic regime
+Pull out samples from euxinic regime
 ```{r}
 # Pull out anoxic layer bacteria sample IDs
 euxinictypes_bac <- metadata %>% 
@@ -1960,6 +1939,7 @@ euxinictypes_arch <- unlist(c(unique(euxinictypes_arch)), use.names = FALSE)
 # Pull out all archaea from euxinic layer
 ps_arch_euxinic<-  prune_samples(euxinictypes_arch, ps_arch)
 ps_arch_ra_euxinic <-  prune_samples(euxinictypes_arch, ps_arch_ra)
+
 
 
 # Pull out euxinic layer eukaryotic sample IDs
@@ -2092,6 +2072,36 @@ alldomains_df_euxinic
 ### SparCC on full dataset
 This is largely based on [BVCN tutorials](https://github.com/biovcnet/biovcnet.github.io/wiki/TOPIC%3A-Networks)
 NOTE- input for SparCC should be raw count data (after filtering out low-abundance ASVs). The function does a log-ratio transformation to account for compositionality
+```{r}
+# Helper functions from J. Cram https://biovcnet.github.io/_pages/NetworkScience_SparCC.nb
+pass <- function(x){x} 
+# Get lower triangle of the correlation matrix
+  get_lower_tri<-function(cormat){
+    cormat[upper.tri(cormat)] <- NA
+    return(cormat)
+  }
+# Get upper triangle of the correlation matrix
+  get_upper_tri <- function(cormat){
+    cormat[lower.tri(cormat)]<- NA
+    return(cormat)
+  }
+
+reorder_cormat <- function(cormat){
+# Use correlation between variables as distance
+dd <- as.dist((1-cormat)/2)
+hc <- hclust(dd)
+cormat <-cormat[hc$order, hc$order]
+}
+
+reorder_cor_and_p <- function(cormat, pmat){
+  dd <- as.dist((1-cormat)/2)
+  hc <- hclust(dd)
+  cormat <-cormat[hc$order, hc$order]
+  pmat <- pmat[hc$order, hc$order]
+  list(r = cormat, p = pmat)
+}
+```
+
 
 ```{r}
 sparcctable_alldomains <- sparcc(t(alldomains_df))
@@ -2229,6 +2239,7 @@ convertSEToTable <- function(se_out,sp.names){
 ```
 
 ### SpiecEasi on full dataset
+
 Follow the spieceasi [documentation](https://github.com/zdk123/SpiecEasi) to find optimal parameters. Also, because I want to compare networks, this [convo](https://github.com/zdk123/SpiecEasi/issues/77) on using optimal parameters for different network comparisons is helpful.
 
 Remove samples from the phyloseq objects that are not in all 3 domains and reorder samples so they are in same order in all 3 objects
@@ -2244,21 +2255,10 @@ ps_bac_ra_pruned_3domains <- prune_samples(all_common, ps_bac_ra_pruned)
 ps_arch_ra_pruned_3domains <- prune_samples(all_common, ps_arch_ra_pruned)
 ps_euk_ra_pruned_3domains <- prune_samples(all_common, ps_euk_ra_pruned)
 
-# do same but make a top 300 otu table (top 100 from each domain)
-ps_bac_pruned_3domains_top100 <- prune_samples(all_common, ps_bac_top100)
-ps_arch_pruned_3domains_top100 <- prune_samples(all_common, ps_arch_top100)
-ps_euk_pruned_3domains_top100 <- prune_samples(all_common, ps_euk_top100)
-
 # make sure samples are in same order
 otu_table(ps_arch_pruned_3domains) <- otu_table(ps_arch_pruned_3domains)[,sample_names(ps_bac_ra_pruned_3domains)]
 otu_table(ps_euk_pruned_3domains) <- otu_table(ps_euk_pruned_3domains)[,sample_names(ps_bac_ra_pruned_3domains)]
 
-otu_table(ps_arch_pruned_3domains_top100) <- otu_table(ps_arch_pruned_3domains_top100)[,sample_names(ps_bac_pruned_3domains_top100)]
-otu_table(ps_euk_pruned_3domains_top100) <- otu_table(ps_euk_pruned_3domains_top100)[,sample_names(ps_bac_pruned_3domains_top100)]
-
-sample_data(ps_bac_pruned_3domains)
-sample_data(ps_arch_pruned_3domains)
-sample_data(ps_euk_pruned_3domains)
 ```
 
 
@@ -2270,17 +2270,7 @@ se <- spiec.easi(list(ps_bac_pruned_3domains, ps_arch_pruned_3domains, ps_euk_pr
 getStability(se)
 ```
 
-the above takes a while to run (20-30 mins). Using parameters above, the stability along the lambda path crosses the 0.05 threshold and the final stability value (0.044) is sufficiently close to 0.05
-
-```{r}
-#Run Spieceasi on 3 domain dataset with top 100 from each domain
-pargs <- list(seed=10010)
-se_3domains_top100 <- spiec.easi(list(ps_bac_pruned_3domains_top100, ps_arch_pruned_3domains_top100, ps_euk_pruned_3domains_top100), method='glasso', lambda.min.ratio=1e-2, nlambda=100, pulsar.params=pargs)
-getStability(se_3domains_top100)
-```
-## 10/27 STOPPED HERE
-SAVED DATASET AS 
-save.image("EnvironmentBackups/CariacoEuks_postanalysis_vars_revisions2.RData")
+the above takes a while to run (20-30 mins). Using parameters above, the stability along the lambda path (in `se$select$stars$summary`) crosses the 0.05 threshold and the final stability value (0.044) is sufficiently close to 0.05
 
 
 ```{r}
@@ -2295,6 +2285,7 @@ ggsave("figures/spieceasi_alldomains.eps",plot.se, width = 35, height = 35, unit
 
 ```
 Note- only the significant values above show up in the heatmap above (ie. there is no "p-value")
+
 
 
 
@@ -2314,6 +2305,7 @@ otu_table(ps_arch_pruned_2domains) <- otu_table(ps_arch_pruned_2domains)[,sample
 
 sample_data(ps_bac_pruned_2domains)
 sample_data(ps_arch_pruned_2domains)
+
 ```
 
 
@@ -2345,6 +2337,8 @@ Note- only the significant values above show up in the heatmap above (ie. there 
 
 
 
+
+
 ### SpiecEasi on oxycline  with 3 domains
 
 ```{r}
@@ -2362,6 +2356,7 @@ otu_table(ps_euk_oxycline_pruned) <- otu_table(ps_euk_oxycline_pruned)[,sample_n
 sample_data(ps_bac_oxycline_pruned)
 sample_data(ps_arch_oxycline_pruned)
 sample_data(ps_euk_oxycline_pruned)
+
 ```
 
 
@@ -2390,6 +2385,12 @@ ggsave("figures/spieceasi_alldomains_oxycline.eps",plot.se.oxycline, width = 35,
 
 
 
+
+
+
+
+
+
 ### SpiecEasi on anoxic depths with 3 domains
 
 ```{r}
@@ -2407,6 +2408,7 @@ otu_table(ps_euk_anoxic_pruned) <- otu_table(ps_euk_anoxic_pruned)[,sample_names
 sample_data(ps_bac_anoxic_pruned)
 sample_data(ps_arch_anoxic_pruned)
 sample_data(ps_euk_anoxic_pruned)
+
 ```
 
 
@@ -2421,9 +2423,6 @@ getStability(se.anoxic)
 the above takes a couple of minutes to run
 
 
-
-
-
 ```{r}
 #This is just a fancy helper function to get the data in a comparable format to the output of above
 tab.se.anoxic <- convertSEToTable(se.anoxic, sp.names=colnames(t(alldomains_df_full_anoxic))) 
@@ -2435,6 +2434,8 @@ plot(plot.se.anoxic)
 ggsave("figures/spieceasi_alldomains_anoxic.eps",plot.se.anoxic, width = 35, height = 35, units = c("in"))
 
 ```
+
+
 
 
 
@@ -2455,6 +2456,7 @@ otu_table(ps_euk_euxinic_pruned) <- otu_table(ps_euk_euxinic_pruned)[,sample_nam
 sample_data(ps_bac_euxinic_pruned)
 sample_data(ps_arch_euxinic_pruned)
 sample_data(ps_euk_euxinic_pruned)
+
 ```
 
 
@@ -2467,6 +2469,8 @@ getStability(se.euxinic)
 ```
 
 I tried many parameters on the above but cannot get a satisfactory solution. There are just too few samples after quality filtering to do SpiecEasi on the euxinic depths only.
+
+
 
 
 ### Save and re-load environment
@@ -3574,3 +3578,2129 @@ Or load if coming back
 ```{r}
 load("EnvironmentBackups/CariacoEuks_postanalysis_vars_upto_nodelevelmeasures.RData")
 ```
+
+
+# Oct-Nov 2021 Revisions
+In response to reviews, re-run some analyses
+
+Make all networks same size so that they are directly comparable-
+
+### Prepare for whole network analysis
+Make subsets that will allow for controlling for network size later on
+- top 100 euks, bac, arch (which will be combined into a 300-member dataset)
+- top 150 bac and arch (which will be combined into a 300-member dataset of Proks only)
+```{r}
+# Retain top 100 most abundant bacteria
+bac_top100 <- names(sort(taxa_sums(ps_bac_ra), TRUE)[1:100])
+ps_bac_top100 <-  prune_taxa(bac_top100, ps_bac)
+
+# Retain top 150 most abundant bacteria
+bac_top150 <- names(sort(taxa_sums(ps_bac_ra), TRUE)[1:150])
+ps_bac_top150 <-  prune_taxa(bac_top150, ps_bac)
+# Retain top 100 most abundant archaea
+arch_top100 <- names(sort(taxa_sums(ps_arch_ra), TRUE)[1:100])
+ps_arch_top100 <-  prune_taxa(arch_top100, ps_arch)
+
+# Retain top 150 most abundant archaea
+arch_top150 <- names(sort(taxa_sums(ps_arch_ra), TRUE)[1:150])
+ps_arch_top150 <-  prune_taxa(arch_top150, ps_arch)
+
+# Retain top 100 most abundant archaea
+euk_top100 <- names(sort(taxa_sums(ps_ra), TRUE)[1:100])
+ps_euk_top100 <-  prune_taxa(euk_top100, ps)
+
+# Retain top 150 most abundant archaea
+euk_top150 <- names(sort(taxa_sums(ps_ra), TRUE)[1:150])
+ps_euk_top150 <-  prune_taxa(euk_top150, ps)
+```
+
+Change the sample names in the otu tables to sample "Type"
+```{r}
+# Archaea
+# # remove missing archaea samples from samplekey_A
+samplekey_A <- filter(samplekey, SampleID_arch  %in% colnames(otu_table(ps_arch_top100)))
+# sort SampleKey by order of column names from ps_arch_top100
+samplekey_A <- samplekey_A %>% arrange(factor(SampleID_arch, levels = colnames(otu_table(ps_arch_top100))))
+
+# and fill in sample names of filtered phyloseq objects
+sample_names(ps_arch_top100) <- samplekey_A$Type
+# and ps_arch_top150
+sample_names(ps_arch_top150) <- samplekey_A$Type
+
+# Bacteria
+samplekey_B <- filter(samplekey, SampleID_bac  %in% colnames(otu_table(ps_bac_top100)))
+samplekey_B <- samplekey_B %>% arrange(factor(SampleID_bac, levels = colnames(otu_table(ps_bac_top100))))
+sample_names(ps_bac_top100) <- samplekey_B$Type
+sample_names(ps_bac_top150) <- samplekey_B$Type
+
+
+# Eukaryotes
+samplekey_E <- filter(samplekey, SampleID_euk  %in% colnames(otu_table(ps_euk_top100)))
+samplekey_E <- samplekey_E %>% arrange(factor(SampleID_euk, levels = colnames(otu_table(ps_euk_top100))))
+sample_names(ps_euk_top100) <- samplekey_E$Type
+sample_names(ps_euk_top150) <- samplekey_E$Type
+
+```
+
+### Prepare for oxycline-only
+Similar to above, pull out top 100 from each domain/ redox regime in order to make networks of the same size
+
+```{r}
+# Retain top 100 most abundant bacteria
+bac_top100_oxycline <- names(sort(taxa_sums(ps_bac_ra_oxycline), TRUE)[1:100])
+ps_bac_top100_oxycline <-  prune_taxa(bac_top100_oxycline, ps_bac_oxycline)
+
+
+# Retain top 100 most abundant archaea
+arch_top100_oxycline <- names(sort(taxa_sums(ps_arch_ra_oxycline), TRUE)[1:100])
+ps_arch_top100_oxycline <-  prune_taxa(arch_top100_oxycline, ps_arch_oxycline)
+
+
+# Retain top 100 most abundant eukarya
+euk_top100_oxycline <- names(sort(taxa_sums(ps_euk_ra_oxycline), TRUE)[1:100])
+ps_euk_top100_oxycline <-  prune_taxa(euk_top100_oxycline, ps_euk_oxycline)
+
+```
+
+Change the sample names in the otu tables to "Type"
+```{r}
+# Archaea
+# remove missing archaea samples from samplekey_A
+samplekey_A <- filter(samplekey, SampleID_arch  %in% colnames(otu_table(ps_arch_top100_oxycline)))
+# sort SampleKey by order of column names from ps_arch_top100_oxycline
+samplekey_A <- samplekey_A %>% arrange(factor(SampleID_arch, levels = colnames(otu_table(ps_arch_top100_oxycline))))
+
+sample_names(ps_arch_top100_oxycline) <- samplekey_A$Type
+
+
+# Bacteria
+samplekey_B <- filter(samplekey, SampleID_bac  %in% colnames(otu_table(ps_bac_top100_oxycline)))
+samplekey_B <- samplekey_B %>% arrange(factor(SampleID_bac, levels = colnames(otu_table(ps_bac_top100_oxycline))))
+sample_names(ps_bac_top100_oxycline) <- samplekey_B$Type
+
+
+# Eukaryotes
+samplekey_E <- filter(samplekey, SampleID_euk  %in% colnames(otu_table(ps_euk_top100_oxycline)))
+samplekey_E <- samplekey_E %>% arrange(factor(SampleID_euk, levels = colnames(otu_table(ps_euk_top100_oxycline))))
+sample_names(ps_euk_top100_oxycline) <- samplekey_E$Type
+
+```
+
+### Prepare for anoxic-only
+
+```{r}
+
+# Retain top 100 most abundant bacteria
+bac_top100_anoxic <- names(sort(taxa_sums(ps_bac_ra_anoxic), TRUE)[1:100])
+ps_bac_top100_anoxic <-  prune_taxa(bac_top100_anoxic, ps_bac_anoxic)
+
+# Retain top 100 most abundant archaea
+arch_top100_anoxic <- names(sort(taxa_sums(ps_arch_ra_anoxic), TRUE)[1:100])
+ps_arch_top100_anoxic <-  prune_taxa(arch_top100_anoxic, ps_arch_anoxic)
+
+# Retain top 100 most abundant eukarya
+euk_top100_anoxic <- names(sort(taxa_sums(ps_euk_ra_anoxic), TRUE)[1:100])
+ps_euk_top100_anoxic <-  prune_taxa(euk_top100_anoxic, ps_euk_anoxic)
+
+```
+
+
+Change the sample names in the otu tables to "Type"
+```{r}
+# Archaea
+# remove missing archaea samples from samplekey_A
+samplekey_A <- filter(samplekey, SampleID_arch  %in% colnames(otu_table(ps_arch_top100_anoxic)))
+# sort SampleKey by order of column names from ps_arch_top100_anoxic
+samplekey_A <- samplekey_A %>% arrange(factor(SampleID_arch, levels = colnames(otu_table(ps_arch_top100_anoxic))))
+sample_names(ps_arch_top100_anoxic) <- samplekey_A$Type
+
+# Bacteria
+samplekey_B <- filter(samplekey, SampleID_bac  %in% colnames(otu_table(ps_bac_top100_anoxic)))
+samplekey_B <- samplekey_B %>% arrange(factor(SampleID_bac, levels = colnames(otu_table(ps_bac_top100_anoxic))))
+sample_names(ps_bac_top100_anoxic) <- samplekey_B$Type
+
+
+# Eukaryotes
+samplekey_E <- filter(samplekey, SampleID_euk  %in% colnames(otu_table(ps_euk_top100_anoxic)))
+samplekey_E <- samplekey_E %>% arrange(factor(SampleID_euk, levels = colnames(otu_table(ps_euk_top100_anoxic))))
+sample_names(ps_euk_top100_anoxic) <- samplekey_E$Type
+
+```
+
+
+### Prepare for euxinic-only
+
+Pull out samples from euxinic regime
+```{r}
+# Retain top 100 most abundant bacteria
+bac_top100_euxinic <- names(sort(taxa_sums(ps_bac_ra_euxinic), TRUE)[1:100])
+ps_bac_top100_euxinic <-  prune_taxa(bac_top100_euxinic, ps_bac_euxinic)
+
+
+# Retain top 100 most abundant archaea
+arch_top100_euxinic <- names(sort(taxa_sums(ps_arch_ra_euxinic), TRUE)[1:100])
+ps_arch_top100_euxinic <-  prune_taxa(arch_top100_euxinic, ps_arch_euxinic)
+
+
+# Retain top 100 most abundant archaea
+euk_top100_euxinic <- names(sort(taxa_sums(ps_euk_ra_euxinic), TRUE)[1:100])
+ps_euk_top100_euxinic <-  prune_taxa(euk_top100_euxinic, ps_euk_euxinic)
+
+```
+
+Change the sample names in the otu tables to "Type"
+```{r}
+# Archaea
+# remove missing archaea samples from samplekey_A
+samplekey_A <- filter(samplekey, SampleID_arch  %in% colnames(otu_table(ps_arch_top100_euxinic)))
+# sort SampleKey by order of column names from ps_arch_top100_euxinic
+samplekey_A <- samplekey_A %>% arrange(factor(SampleID_arch, levels = colnames(otu_table(ps_arch_top100_euxinic))))
+
+sample_names(ps_arch_top100_euxinic) <- samplekey_A$Type
+
+
+# Bacteria
+samplekey_B <- filter(samplekey, SampleID_bac  %in% colnames(otu_table(ps_bac_top100_euxinic)))
+samplekey_B <- samplekey_B %>% arrange(factor(SampleID_bac, levels = colnames(otu_table(ps_bac_top100_euxinic))))
+
+sample_names(ps_bac_top100_euxinic) <- samplekey_B$Type
+
+
+# Eukaryotes
+samplekey_E <- filter(samplekey, SampleID_euk  %in% colnames(otu_table(ps_euk_top100_euxinic)))
+samplekey_E <- samplekey_E %>% arrange(factor(SampleID_euk, levels = colnames(otu_table(ps_euk_top100_euxinic))))
+
+sample_names(ps_euk_top100_euxinic) <- samplekey_E$Type
+
+```
+
+
+### Eukaryotic parasite-only and nonparasite-only networks
+Remove all known parasites from eukaryotic table then put back together into whole dataset
+```{r}
+# Flag the parasites in the eukaryotic table according to known parasites identified in literature review: Syndiniales, Oligohymenophorea, Labyrinthulomycetes, chytrids, Cryomonadida: Protaspa, Apicomplexa and Perkinsida (alveolates) 
+nonparasites <- as.data.frame(tax_table(ps)) %>% 
+  filter(!grepl('Syndiniales', Class)) %>% 
+  filter(!grepl('Oligohymenophorea', Class)) %>% 
+  filter(!grepl('Labyrinthulomycetes', Class)) %>% 
+  filter(!grepl('Chytridiomycota', Class)) %>% 
+  filter(!grepl('Protaspa-lineage', Family)) %>% 
+  filter(!grepl('Apicomplexa', Division)) %>% 
+  filter(!grepl('Perkinsida', Class))
+nonparasites
+# Reduced from 13,427 rows to 7,344
+
+# parasites only
+parasites <- as.data.frame(tax_table(ps)) %>% 
+  filter(!row.names(as.data.frame(tax_table(ps))) %in% rownames(nonparasites))
+parasites
+# 6083 parasites
+
+# Make new phyloseq objects
+ps_euk_nonparasites <-  prune_taxa(rownames(nonparasites), ps)
+ps_euk_parasites <-  prune_taxa(rownames(parasites), ps)
+
+# Retain top 100 from each of these
+euk_top100_nonparasites <- names(sort(taxa_sums(ps_euk_nonparasites), TRUE)[1:100])
+ps_euk_nonparasites_top100 <-  prune_taxa(euk_top100_nonparasites, ps)
+
+euk_top100_parasites <- names(sort(taxa_sums(ps_euk_parasites), TRUE)[1:100])
+ps_euk_parasites_top100 <-  prune_taxa(euk_top100_parasites, ps)
+
+```
+
+Export table of parasite taxonomy for supplemental table in manuscript
+```{r}
+write_csv(distinct(parasites), "Figures/parasites_list.csv")
+distinct(parasites)
+# How many parasites out of total euks?
+dim(parasites)[1]/dim(tax_table(ps))[1]
+```
+
+
+Change the sample names in the otu tables to sample "Type"
+```{r}
+samplekey_E <- filter(samplekey, SampleID_euk  %in% colnames(otu_table(ps_euk_nonparasites_top100)))
+samplekey_E <- samplekey_E %>% arrange(factor(SampleID_euk, levels = colnames(otu_table(ps_euk_nonparasites_top100))))
+sample_names(ps_euk_nonparasites_top100) <- samplekey_E$Type
+
+samplekey_E <- filter(samplekey, SampleID_euk  %in% colnames(otu_table(ps_euk_parasites_top100)))
+samplekey_E <- samplekey_E %>% arrange(factor(SampleID_euk, levels = colnames(otu_table(ps_euk_parasites_top100))))
+sample_names(ps_euk_parasites_top100) <- samplekey_E$Type
+```
+
+
+
+## Run SpiecEasi 
+### Full dataset
+Using top 100 OTUs/ASVs from each of the 3 domains
+
+Remove samples from the phyloseq objects that are not in all 3 domains and reorder samples so they are in same order in all 3 objects
+```{r}
+bac_arch_common <- intersect(sample_names(ps_bac_ra_pruned), sample_names(ps_arch_ra_pruned))
+all_common <- intersect(bac_arch_common, sample_names(ps_euk_ra_pruned))
+
+ps_bac_pruned_3domains_top100 <- prune_samples(all_common, ps_bac_top100)
+ps_arch_pruned_3domains_top100 <- prune_samples(all_common, ps_arch_top100)
+ps_euk_pruned_3domains_top100 <- prune_samples(all_common, ps_euk_top100)
+
+otu_table(ps_arch_pruned_3domains_top100) <- otu_table(ps_arch_pruned_3domains_top100)[,sample_names(ps_bac_pruned_3domains_top100)]
+otu_table(ps_euk_pruned_3domains_top100) <- otu_table(ps_euk_pruned_3domains_top100)[,sample_names(ps_bac_pruned_3domains_top100)]
+
+sample_data(ps_bac_pruned_3domains)
+sample_data(ps_arch_pruned_3domains)
+sample_data(ps_euk_pruned_3domains)
+```
+
+```{r}
+#Run Spieceasi on 3 domain dataset with top 100 from each domain
+pargs <- list(seed=10010)
+se_3domains_top100 <- spiec.easi(list(ps_bac_pruned_3domains_top100, ps_arch_pruned_3domains_top100, ps_euk_pruned_3domains_top100), method='glasso', lambda.min.ratio=1e-2, nlambda=100, pulsar.params=pargs)
+getStability(se_3domains_top100)
+```
+
+
+### 3 Domains, Only nonparasite eukaryotes
+Remove samples from the phyloseq objects that are not in all 3 datasets. Reorder samples so they are in same order in all 3 objects
+```{r}
+bac_arch_common <- intersect(sample_names(ps_bac_ra_pruned), sample_names(ps_arch_ra_pruned))
+all_common <- intersect(bac_arch_common, sample_names(ps_euk_ra_pruned))
+
+ps_bac_pruned_3domains_top100 <- prune_samples(all_common, ps_bac_top100)
+ps_arch_pruned_3domains_top100 <- prune_samples(all_common, ps_arch_top100)
+ps_euk_nonparasites_pruned_3domains_top100 <- prune_samples(all_common, ps_euk_nonparasites_top100)
+
+otu_table(ps_arch_pruned_3domains_top100) <- otu_table(ps_arch_pruned_3domains_top100)[,sample_names(ps_bac_pruned_3domains_top100)]
+otu_table(ps_euk_nonparasites_pruned_3domains_top100) <- otu_table(ps_euk_nonparasites_pruned_3domains_top100)[,sample_names(ps_bac_pruned_3domains_top100)]
+
+sample_data(ps_bac_pruned_3domains_top100)
+sample_data(ps_arch_pruned_3domains_top100)
+sample_data(ps_euk_nonparasites_pruned_3domains_top100)
+```
+
+Run
+```{r}
+#Run Spieceasi on 3 domain dataset with top 100 from each domain
+pargs <- list(seed=10010)
+se_3domains_top100_nonparasites <- spiec.easi(list(ps_bac_pruned_3domains_top100, ps_arch_pruned_3domains_top100, ps_euk_nonparasites_pruned_3domains_top100), method='glasso', lambda.min.ratio=1e-2, nlambda=100, pulsar.params=pargs)
+getStability(se_3domains_top100_nonparasites)
+```
+
+### 3 Domains, Only parasite eukaryotes
+Remove samples from the phyloseq objects that are not in all 3 datasets. Reorder samples so they are in same order in all 3 objects
+```{r}
+bac_arch_common <- intersect(sample_names(ps_bac_ra_pruned), sample_names(ps_arch_ra_pruned))
+all_common <- intersect(bac_arch_common, sample_names(ps_euk_ra_pruned))
+
+ps_bac_pruned_3domains_top100 <- prune_samples(all_common, ps_bac_top100)
+ps_arch_pruned_3domains_top100 <- prune_samples(all_common, ps_arch_top100)
+ps_euk_parasites_pruned_3domains_top100 <- prune_samples(all_common, ps_euk_parasites_top100)
+
+otu_table(ps_arch_pruned_3domains_top100) <- otu_table(ps_arch_pruned_3domains_top100)[,sample_names(ps_bac_pruned_3domains_top100)]
+otu_table(ps_euk_parasites_pruned_3domains_top100) <- otu_table(ps_euk_parasites_pruned_3domains_top100)[,sample_names(ps_bac_pruned_3domains_top100)]
+
+sample_data(ps_bac_pruned_3domains_top100)
+sample_data(ps_arch_pruned_3domains_top100)
+sample_data(ps_euk_parasites_pruned_3domains_top100)
+```
+
+Run
+```{r}
+#Run Spieceasi on 3 domain dataset with top 100 from each domain
+pargs <- list(seed=1001)
+se_3domains_top100_parasites <- spiec.easi(list(ps_bac_pruned_3domains_top100, ps_arch_pruned_3domains_top100, ps_euk_parasites_pruned_3domains_top100), method='glasso', lambda.min.ratio=1e-2, nlambda=100, pulsar.params=pargs)
+getStability(se_3domains_top100_parasites)
+```
+
+
+
+
+
+### Two-Domain dataset
+Prkaryotes only
+150 from each domain, to keep size of network consistent
+
+
+Remove samples from the phyloseq objects that are not in both domains and reorder samples so they are in same order in all 3 objects
+```{r}
+bac_arch_common <- intersect(sample_names(ps_bac_ra_pruned), sample_names(ps_arch_ra_pruned))
+
+ps_bac_pruned_2domains_top150 <- prune_samples(bac_arch_common, ps_bac_top150)
+ps_arch_pruned_2domains_top150 <- prune_samples(bac_arch_common, ps_arch_top150)
+
+otu_table(ps_arch_pruned_2domains_top150) <- otu_table(ps_arch_pruned_2domains_top150)[,sample_names(ps_bac_pruned_2domains_top150)]
+
+sample_data(ps_bac_pruned_2domains_top150)
+sample_data(ps_arch_pruned_2domains_top150)
+
+```
+
+Run
+```{r}
+#Run Spieceasi while controlling for dataset size-
+# Use the 150-member subset of each, bac and arch, so the full dataset is 300 members
+# Same size as full dataset network
+pargs <- list(seed=10010)
+se_2domains_top150 <- spiec.easi(list(ps_bac_pruned_2domains_top150, ps_arch_pruned_2domains_top150), method='glasso', lambda.min.ratio=1e-2, nlambda=200, pulsar.params=pargs)
+getStability(se_2domains_top150)
+```
+
+
+### Oxycline, all 3 domains
+
+```{r}
+bac_arch_common <- intersect(sample_names(ps_bac_oxycline_pruned), sample_names(ps_arch_oxycline_pruned))
+all_common <- intersect(bac_arch_common, sample_names(ps_euk_oxycline_pruned))
+
+ps_bac_pruned_3domains_top100_oxycline <- prune_samples(all_common, ps_bac_top100_oxycline)
+ps_arch_pruned_3domains_top100_oxycline <- prune_samples(all_common, ps_arch_top100_oxycline)
+ps_euk_pruned_3domains_top100_oxycline <- prune_samples(all_common, ps_euk_top100_oxycline)
+
+otu_table(ps_arch_pruned_3domains_top100_oxycline) <- otu_table(ps_arch_pruned_3domains_top100_oxycline)[,sample_names(ps_bac_pruned_3domains_top100_oxycline)]
+otu_table(ps_euk_pruned_3domains_top100_oxycline) <- otu_table(ps_euk_pruned_3domains_top100_oxycline)[,sample_names(ps_bac_pruned_3domains_top100_oxycline)]
+
+sample_data(ps_bac_pruned_3domains_top100_oxycline)
+sample_data(ps_arch_pruned_3domains_top100_oxycline)
+sample_data(ps_euk_pruned_3domains_top100_oxycline)
+
+```
+
+Run
+```{r}
+#Run Spieceasi while controlling for dataset size-
+# Use the 100-member subset of each, bac, arch, and euk from the oxycline, so the dataset is 300 members
+# Same size as full dataset network
+pargs <- list(seed=10010)
+se_3domains_top100_oxycline <- spiec.easi(list(ps_bac_pruned_3domains_top100_oxycline, ps_arch_pruned_3domains_top100_oxycline, ps_euk_pruned_3domains_top100_oxycline), method='glasso', lambda.min.ratio=1e-2, nlambda=200, pulsar.params=pargs)
+getStability(se_3domains_top100_oxycline)
+```
+
+
+
+
+### Anoxic, all 3 domains
+
+```{r}
+bac_arch_common <- intersect(sample_names(ps_bac_anoxic_pruned), sample_names(ps_arch_anoxic_pruned))
+all_common <- intersect(bac_arch_common, sample_names(ps_euk_anoxic_pruned))
+
+ps_bac_pruned_3domains_top100_anoxic <- prune_samples(all_common, ps_bac_top100_anoxic)
+ps_arch_pruned_3domains_top100_anoxic <- prune_samples(all_common, ps_arch_top100_anoxic)
+ps_euk_pruned_3domains_top100_anoxic <- prune_samples(all_common, ps_euk_top100_anoxic)
+
+otu_table(ps_arch_pruned_3domains_top100_anoxic) <- otu_table(ps_arch_pruned_3domains_top100_anoxic)[,sample_names(ps_bac_pruned_3domains_top100_anoxic)]
+otu_table(ps_euk_pruned_3domains_top100_anoxic) <- otu_table(ps_euk_pruned_3domains_top100_anoxic)[,sample_names(ps_bac_pruned_3domains_top100_anoxic)]
+
+sample_data(ps_bac_pruned_3domains_top100_anoxic)
+sample_data(ps_arch_pruned_3domains_top100_anoxic)
+sample_data(ps_euk_pruned_3domains_top100_anoxic)
+
+```
+
+
+
+```{r}
+#Run Spieceasi while controlling for dataset size-
+# Use the 100-member subset of each, bac, arch, and euk from the oxycline, so the dataset is 300 members
+# Same size as full dataset network
+pargs <- list(seed=10010)
+se_3domains_top100_anoxic <- spiec.easi(list(ps_bac_pruned_3domains_top100_anoxic, ps_arch_pruned_3domains_top100_anoxic, ps_euk_pruned_3domains_top100_anoxic), method='glasso', lambda.min.ratio=1e-2, nlambda=250, pulsar.params=pargs)
+getStability(se_3domains_top100_anoxic)
+```
+
+
+### Euxinic, all 3 domains
+
+```{r}
+bac_arch_common <- intersect(sample_names(ps_bac_euxinic_pruned), sample_names(ps_arch_euxinic_pruned))
+all_common <- intersect(bac_arch_common, sample_names(ps_euk_euxinic_pruned))
+
+ps_bac_pruned_3domains_top100_euxinic <- prune_samples(all_common, ps_bac_top100_euxinic)
+ps_arch_pruned_3domains_top100_euxinic <- prune_samples(all_common, ps_arch_top100_euxinic)
+ps_euk_pruned_3domains_top100_euxinic <- prune_samples(all_common, ps_euk_top100_euxinic)
+
+otu_table(ps_arch_pruned_3domains_top100_euxinic) <- otu_table(ps_arch_pruned_3domains_top100_euxinic)[,sample_names(ps_bac_pruned_3domains_top100_euxinic)]
+otu_table(ps_euk_pruned_3domains_top100_euxinic) <- otu_table(ps_euk_pruned_3domains_top100_euxinic)[,sample_names(ps_bac_pruned_3domains_top100_euxinic)]
+
+sample_data(ps_bac_pruned_3domains_top100_euxinic)
+sample_data(ps_arch_pruned_3domains_top100_euxinic)
+sample_data(ps_euk_pruned_3domains_top100_euxinic)
+```
+
+Run
+```{r}
+#Run Spieceasi while controlling for dataset size-
+# Use the 100-member subset of each, bac, arch, and euk from the oxycline, so the dataset is 300 members
+# Same size as full dataset network
+pargs <- list(seed=10010)
+se_3domains_top100_euxinic <- spiec.easi(list(ps_bac_pruned_3domains_top100_euxinic, ps_arch_pruned_3domains_top100_euxinic, ps_euk_pruned_3domains_top100_euxinic), method='glasso', lambda.min.ratio=1e-1, nlambda=100, pulsar.params=pargs)
+getStability(se_3domains_top100_euxinic)
+```
+
+--> no matter the parameters, I still can't get this to work. It's too small
+
+
+
+### Save output from SpiecEasi
+Need to save in two portions because they're too big-
+```{r}
+save(se_3domains_top100, file = "EnvironmentBackups/CariacoEuks_revisions2_additionalvars_1.RData")
+save(se_2domains_top150, file = "EnvironmentBackups/CariacoEuks_revisions2_additionalvars_2.RData")
+save(se_3domains_top100_oxycline, file = "EnvironmentBackups/CariacoEuks_revisions2_additionalvars_3.RData")
+save(se_3domains_top100_anoxic, file = "EnvironmentBackups/CariacoEuks_revisions2_additionalvars_4.RData")
+save(se_3domains_top100_nonparasites, file = "EnvironmentBackups/CariacoEuks_revisions2_additionalvars_5.RData")
+save(se_3domains_top100_parasites, file = "EnvironmentBackups/CariacoEuks_revisions2_additionalvars_6.RData")
+
+# these are very large. remove them and load one-by-one while working:
+
+# rm(se_3domains_top100, se_2domains_top150, se_3domains_top100_oxycline, se_3domains_top100_anoxic, se_3domains_top100_nonparasites, se_3domains_top100_parasites)
+```
+
+
+## Build network objects
+### Full dataset
+First extract ASV names from original phyloseq objects in order to retain for network nodes. Make sure these are in same order in which they went in SpiecEasi
+```{r}
+load("EnvironmentBackups/CariacoEuks_revisions2_additionalvars_1.RData")
+
+top300_df <- bind_rows(data.frame(otu_table(ps_bac_top100)), data.frame(otu_table(ps_arch_top100)), data.frame(otu_table(ps_euk_top100)))
+top300_df
+```
+
+
+```{r}
+#Extract adjacency matrix from spiecEasi output
+adj.mat <- getRefit(se_3domains_top100)
+table(as.numeric(adj.mat))
+
+# Extract weighted adjacency
+se.cor  <- cov2cor(as.matrix(getOptCov(se_3domains_top100)))
+weighted.adj.mat <- se.cor*getRefit(se_3domains_top100)
+
+#Convert to graph objects
+grph.unweighted.top300 <- adj2igraph(adj.mat)
+grph.top300 <- adj2igraph(weighted.adj.mat)
+
+
+# Put back in species names
+V(grph.top300)$name <- rownames(top300_df)
+# V(grph.top300)
+
+# Make size of nodes proportional to degree (number of connections)
+V(grph.top300)$size <- (degree(grph.top300) + 1) # the +1 avoids size zero vertices
+
+# Change width of edges to be proportional to their weights
+E(grph.top300)$width <- abs(E(grph.top300)$weight)*10
+
+# Scale node sizes to be smaller
+V(grph.top300)$size <- V(grph.top300)$size/2
+
+# Join taxonomy data of each node
+# Convert graph to datafram
+grph.top300_df <- igraph::as_data_frame(grph.top300, 'both')
+
+# make formatted taxonomy tables for each domain
+bac_top100_tax_table <- as.data.frame(tax_table(ps_bac_pruned_3domains_top100)) %>%
+  mutate(name = rownames(tax_table(ps_bac_pruned_3domains_top100)))
+arch_top100_tax_table <- as.data.frame(tax_table(ps_arch_pruned_3domains_top100)) %>%
+  mutate(name = rownames(tax_table(ps_arch_pruned_3domains_top100)))
+euk_top100_tax_table <- as.data.frame(tax_table(ps_euk_pruned_3domains_top100)) %>%
+  mutate(name = rownames(tax_table(ps_euk_pruned_3domains_top100)))
+
+#link graph data frame to formatted taxonomy tables
+bac_temp <- left_join(grph.top300_df$vertices[1:ntaxa(ps_bac_pruned_3domains_top100),],
+bac_top100_tax_table, by = "name")
+# delete columns that don't match other tax tables
+bac_temp <- select(bac_temp, -"taxonomy-9", -"Refined taxonomy")
+
+arch_temp <- left_join(grph.top300_df$vertices[ntaxa(ps_arch_pruned_3domains_top100)+1:ntaxa(ps_arch_pruned_3domains_top100),],arch_top100_tax_table, by = "name")
+
+euk_temp <- left_join(grph.top300_df$vertices[ntaxa(ps_euk_pruned_3domains_top100)+ntaxa(ps_euk_pruned_3domains_top100)+1:ntaxa(ps_euk_pruned_3domains_top100),], euk_top100_tax_table, by = "name")
+
+# rename column names in euk table to match others
+euk_temp <- euk_temp %>%
+    rename("taxonomy-1" = Kingdom, "taxonomy-2" = Supergroup, "taxonomy-3" = Division, "taxonomy-4" = Class, "taxonomy-5" = Order, "taxonomy-6" = Family, "taxonomy-7" = Genus, "taxonomy-8" = Species)
+
+# build full dataframe with all 3 domains
+all_temp <- rbind(bac_temp, arch_temp, euk_temp)
+
+# remake into graph
+grph.top300 <- graph_from_data_frame(grph.top300_df$edges,
+                                   directed = F,
+                                   vertices = all_temp)
+
+# Make color paletter for domain
+dtype = c("red", "green", "blue", "grey")
+# Make color vector
+domain_color_top300 <- dtype[as.numeric(as.factor(V(grph.top300)$"taxonomy-1"))]
+
+
+# Plot
+plot(grph.top300,
+     vertex.label=NA,
+     layout=layout_with_graphopt(grph.top300),
+     vertex.color=domain_color_top300)
+title("SpiecEasi Network: All domains")
+legend("topright",bty = "n",
+       legend=c("Archaea", "Bacteria", "Eukarya", "No blast hit"),
+       fill=c("red","green","blue", "grey"), border=NA)
+
+# Save plot
+setEPS()
+postscript(file = "Figures/3domains_top300_spieceasi_network.eps", width = 5.5, height = 5)
+plot(grph.top300,
+     vertex.label=NA,
+     layout=layout_with_graphopt(grph.top300),
+     vertex.color=domain_color_top300)
+title("SpiecEasi Network: All domains")
+legend("topright",bty = "n",
+       legend=c("Archaea", "Bacteria", "Eukarya", "No blast hit"),
+       fill=c("red","green","blue", "grey"), border=NA)
+dev.off()
+```
+
+
+
+#### Positive and negative edges separately
+```{r}
+# Subset based on pos or neg edges
+grph.top300.pos <-delete.edges(grph.top300, which(E(grph.top300)$weight<0))
+grph.top300.neg <-delete.edges(grph.top300, which(E(grph.top300)$weight>0))
+
+# For each subsetted graph, remove those nodes that are no longer connected to anything
+grph.top300.pos <- delete.vertices(grph.top300.pos, which(degree(grph.top300.pos)==0))
+grph.top300.neg <- delete.vertices(grph.top300.neg, which(degree(grph.top300.neg)==0))
+
+# Make color vector for each
+domain_color_top300_pos <- dtype[as.numeric(as.factor(V(grph.top300.pos)$"taxonomy-1"))]
+domain_color_top300_neg <- dtype[as.numeric(as.factor(V(grph.top300.neg)$"taxonomy-1"))]
+
+# Plot pos
+plot(grph.top300.pos,
+     vertex.label=NA,
+     layout=layout_with_graphopt(grph.top300.pos),
+     vertex.color=domain_color_top300_pos)
+title("SpiecEasi Network: All domains, Positive Edges only")
+legend("topright",bty = "n",
+       legend=c("Archaea", "Bacteria", "Eukarya", "No blast hit"),
+       fill=c("red","green","blue", "grey"), border=NA)
+
+# Plot neg
+plot(grph.top300.neg,
+     vertex.label=NA,
+     layout=layout_with_graphopt(grph.top300.neg),
+     vertex.color=domain_color_top300_neg)
+title("SpiecEasi Network: All domains, Negative Edges Only")
+legend("topright",bty = "n",
+       legend=c("Archaea", "Bacteria", "Eukarya", "No blast hit"),
+       fill=c("red","green","blue", "grey"), border=NA)
+
+
+# Save plots
+setEPS()
+postscript(file = "Figures/3domains_top300_posedges_spieceasi_network.eps", width = 5.5, height = 5)
+plot(grph.top300.pos,
+     vertex.label=NA,
+     layout=layout_with_graphopt(grph.top300.pos),
+     vertex.color=domain_color_top300_pos)
+title("SpiecEasi Network: All domains, Positive Edges Only, Oxycline")
+legend("topright",bty = "n",
+       legend=c("Archaea", "Bacteria", "Eukarya", "No blast hit"),
+       fill=c("red","green","blue", "grey"), border=NA)
+dev.off()
+
+setEPS()
+postscript(file = "Figures/3domains_top300_negedges_spieceasi_network.eps", width = 5.5, height = 5)
+plot(grph.top300.neg,
+     vertex.label=NA,
+     layout=layout_with_graphopt(grph.top300.neg),
+     vertex.color=domain_color_oxycline_neg)
+title("SpiecEasi Network: All domains, Negative Edges Only")
+legend("topright",bty = "n",
+       legend=c("Archaea", "Bacteria", "Eukarya", "No blast hit"),
+       fill=c("red","green","blue", "grey"), border=NA)
+
+dev.off()
+```
+
+
+
+
+
+
+
+
+### Two Domain dataset
+First extract ASV names from original phyloseq objects in order to retain for network nodes. Make sure these are in same order in which they went in SpiecEasi
+```{r}
+rm(se_3domains_top100)
+load("EnvironmentBackups/CariacoEuks_revisions2_additionalvars_2.RData")
+
+top300_2domains_df <- bind_rows(data.frame(otu_table(ps_bac_top150)), data.frame(otu_table(ps_arch_top150)))
+top300_2domains_df
+```
+
+
+```{r}
+#Extract adjacency matrix from spiecEasi output
+adj.mat <- getRefit(se_2domains_top150)
+table(as.numeric(adj.mat))
+
+# Extract weighted adjacency
+se.cor  <- cov2cor(as.matrix(getOptCov(se_2domains_top150)))
+weighted.adj.mat <- se.cor*getRefit(se_2domains_top150)
+
+#Convert to graph objects
+grph.unweighted.top300 <- adj2igraph(adj.mat)
+grph.2domains.top300 <- adj2igraph(weighted.adj.mat)
+
+
+# Put back in species names
+V(grph.2domains.top300)$name <- rownames(top300_2domains_df)
+
+# Make size of nodes proportional to degree (number of connections)
+V(grph.2domains.top300)$size <- (degree(grph.2domains.top300) + 1) # the +1 avoids size zero vertices
+
+# Change width of edges to be proportional to their weights
+E(grph.2domains.top300)$width <- abs(E(grph.2domains.top300)$weight)*10
+
+# Scale node sizes to be smaller
+V(grph.2domains.top300)$size <- V(grph.2domains.top300)$size/2
+
+# Join taxonomy data of each node
+# Convert graph to datafram
+top300_2domains_df <- igraph::as_data_frame(grph.2domains.top300, 'both')
+
+# make formatted taxonomy tables for each domain
+bac_top150_tax_table <- as.data.frame(tax_table(ps_bac_pruned_2domains_top150)) %>%
+  mutate(name = rownames(tax_table(ps_bac_pruned_2domains_top150)))
+arch_top150_tax_table <- as.data.frame(tax_table(ps_arch_pruned_2domains_top150)) %>%
+  mutate(name = rownames(tax_table(ps_arch_pruned_2domains_top150)))
+
+#link graph data frame to formatted taxonomy tables
+bac_temp <- left_join(top300_2domains_df$vertices[1:ntaxa(ps_bac_pruned_2domains_top150),], bac_top150_tax_table, by = "name")
+# delete columns that don't match other tax tables
+bac_temp <- select(bac_temp, -"taxonomy-9", -"Refined taxonomy")
+
+arch_temp <- left_join(top300_2domains_df$vertices[ntaxa(ps_arch_pruned_2domains_top150)+1:ntaxa(ps_arch_pruned_2domains_top150),],arch_top150_tax_table, by = "name")
+
+# build full dataframe with all 3 domains
+all_temp <- rbind(bac_temp, arch_temp)
+
+# remake into graph
+grph.2domains.top300 <- graph_from_data_frame(top300_2domains_df$edges,
+                                   directed = F,
+                                   vertices = all_temp)
+
+# Make color paletter for domain
+dtype = c("red", "green", "grey")
+# Make color vector
+domain_color_2domains_top300 <- dtype[as.numeric(as.factor(V(grph.2domains.top300)$"taxonomy-1"))]
+
+
+# Plot
+plot(grph.2domains.top300,
+     vertex.label=NA,
+     layout=layout_with_graphopt(grph.2domains.top300),
+     vertex.color=domain_color_2domains_top300)
+title("SpiecEasi Network: Two domains")
+legend("topright",bty = "n",
+       legend=c("Archaea", "Bacteria", "No Blast Hit"),
+       fill=c("red","green","grey"), border=NA)
+
+# Save plot
+setEPS()
+postscript(file = "Figures/2domains_top300_spieceasi_network.eps", width = 5.5, height = 5)
+plot(grph.2domains.top300,
+     vertex.label=NA,
+     layout=layout_with_graphopt(grph.2domains.top300),
+     vertex.color=domain_color_2domains_top300)
+title("SpiecEasi Network: Two domains")
+legend("topright",bty = "n",
+       legend=c("Archaea", "Bacteria", "No Blast Hit"),
+       fill=c("red","green","grey"), border=NA)
+dev.off()
+```
+
+
+
+#### Positive and negative edges separately
+```{r}
+# Subset based on pos or neg edges
+grph.top300.2domains.pos <-delete.edges(grph.2domains.top300, which(E(grph.2domains.top300)$weight<0))
+grph.top300.2domains.neg <-delete.edges(grph.2domains.top300, which(E(grph.2domains.top300)$weight>0))
+
+# For each subsetted graph, remove those nodes that are no longer connected to anything
+grph.top300.2domains.pos <- delete.vertices(grph.top300.2domains.pos, which(degree(grph.top300.2domains.pos)==0))
+grph.top300.2domains.neg <- delete.vertices(grph.top300.2domains.neg, which(degree(grph.top300.2domains.neg)==0))
+
+# Make color vector for each
+dtype <- c("red", "green", "grey" ) # temporarily change for this plot
+domain_color_2domains_top300_pos <- dtype[as.numeric(as.factor(V(grph.top300.2domains.pos)$"taxonomy-1"))]
+domain_color_2domains_top300_neg <- dtype[as.numeric(as.factor(V(grph.top300.2domains.neg)$"taxonomy-1"))]
+dtype <- c("red", "green", "blue", "grey" ) # change back
+
+# Plot pos
+plot(grph.top300.2domains.pos,
+     vertex.label=NA,
+     layout=layout_with_graphopt(grph.top300.2domains.pos),
+     vertex.color=domain_color_2domains_top300_pos)
+title("SpiecEasi Network: Two domains, Positive Edges only")
+legend("topright",bty = "n",
+       legend=c("Archaea", "Bacteria", "No Blast Hit"),
+       fill=c("red","green","grey"), border=NA)
+
+# Plot neg
+plot(grph.top300.2domains.neg,
+     vertex.label=NA,
+     layout=layout_with_graphopt(grph.top300.2domains.neg),
+     vertex.color=domain_color_2domains_top300_neg)
+title("SpiecEasi Network: Two domains, Negative Edges Only")
+legend("topright",bty = "n",
+       legend=c("Archaea", "Bacteria", "No Blast Hit"),
+       fill=c("red","green","grey"), border=NA)
+
+
+# Save plots
+setEPS()
+postscript(file = "Figures/2domains_top300_posedges_spieceasi_network.eps", width = 5.5, height = 5)
+plot(grph.top300.2domains.pos,
+     vertex.label=NA,
+     layout=layout_with_graphopt(grph.top300.2domains.pos),
+     vertex.color=domain_color_2domains_top300_pos)
+title("SpiecEasi Network: Two domains, Positive Edges Only, Oxycline")
+legend("topright",bty = "n",
+       legend=c("Archaea", "Bacteria", "No Blast Hit"),
+       fill=c("red","green","grey"), border=NA)
+dev.off()
+
+setEPS()
+postscript(file = "Figures/2domains_top300_negedges_spieceasi_network.eps", width = 5.5, height = 5)
+plot(grph.top300.2domains.neg,
+     vertex.label=NA,
+     layout=layout_with_graphopt(grph.top300.2domains.neg),
+     vertex.color=domain_color_2domains_top300_neg)
+title("SpiecEasi Network: Two domains, Negative Edges Only")
+legend("topright",bty = "n",
+       legend=c("Archaea", "Bacteria", "No Blast Hit"),
+       fill=c("red","green","grey"), border=NA)
+
+dev.off()
+```
+
+
+
+### Oxycline dataset
+First extract ASV names from original phyloseq objects in order to retain for network nodes. Make sure these are in same order in which they went in SpiecEasi
+```{r}
+rm(se_2domains_top150)
+load("EnvironmentBackups/CariacoEuks_revisions2_additionalvars_3.RData")
+
+top300_oxycline_df <- bind_rows(data.frame(otu_table(ps_bac_pruned_3domains_top100_oxycline)), data.frame(otu_table(ps_arch_pruned_3domains_top100_oxycline)), data.frame(otu_table(ps_euk_pruned_3domains_top100_oxycline)))
+top300_oxycline_df
+```
+
+
+```{r}
+#Extract adjacency matrix from spiecEasi output
+adj.mat <- getRefit(se_3domains_top100_oxycline)
+table(as.numeric(adj.mat))
+
+# Extract weighted adjacency
+se.cor  <- cov2cor(as.matrix(getOptCov(se_3domains_top100_oxycline)))
+weighted.adj.mat <- se.cor*getRefit(se_3domains_top100_oxycline)
+
+#Convert to graph objects
+grph.unweighted.top300.oxycline <- adj2igraph(adj.mat)
+grph.top300.oxycline <- adj2igraph(weighted.adj.mat)
+
+
+# Put back in species names
+V(grph.top300.oxycline)$name <- rownames(top300_oxycline_df)
+
+
+# Make size of nodes proportional to degree (number of connections)
+V(grph.top300.oxycline)$size <- (degree(grph.top300.oxycline) + 1) # the +1 avoids size zero vertices
+
+# Change width of edges to be proportional to their weights
+E(grph.top300.oxycline)$width <- abs(E(grph.top300.oxycline)$weight)*10
+
+# Scale node sizes to be smaller
+V(grph.top300.oxycline)$size <- V(grph.top300.oxycline)$size/2
+
+# Join taxonomy data of each node
+# Convert graph to datafram
+grph.top300_oxycline_df <- igraph::as_data_frame(grph.top300.oxycline, 'both')
+
+# make formatted taxonomy tables for each domain
+bac_top100_tax_table <- as.data.frame(tax_table(ps_bac_pruned_3domains_top100_oxycline)) %>%
+  mutate(name = rownames(tax_table(ps_bac_pruned_3domains_top100_oxycline)))
+arch_top100_tax_table <- as.data.frame(tax_table(ps_arch_pruned_3domains_top100_oxycline)) %>%
+  mutate(name = rownames(tax_table(ps_arch_pruned_3domains_top100_oxycline)))
+euk_top100_tax_table <- as.data.frame(tax_table(ps_euk_pruned_3domains_top100_oxycline)) %>%
+  mutate(name = rownames(tax_table(ps_euk_pruned_3domains_top100_oxycline)))
+
+#link graph data frame to formatted taxonomy tables
+bac_temp <- left_join(grph.top300_oxycline_df$vertices[1:ntaxa(ps_bac_pruned_3domains_top100_oxycline),],
+bac_top100_tax_table, by = "name")
+# delete columns that don't match other tax tables
+bac_temp <- select(bac_temp, -"taxonomy-9", -"Refined taxonomy")
+
+arch_temp <- left_join(grph.top300_oxycline_df$vertices[ntaxa(ps_arch_pruned_3domains_top100_oxycline)+1:ntaxa(ps_arch_pruned_3domains_top100_oxycline),],arch_top100_tax_table, by = "name")
+
+euk_temp <- left_join(grph.top300_oxycline_df$vertices[ntaxa(ps_euk_pruned_3domains_top100_oxycline)+ntaxa(ps_euk_pruned_3domains_top100_oxycline)+1:ntaxa(ps_euk_pruned_3domains_top100_oxycline),], euk_top100_tax_table, by = "name")
+
+# rename column names in euk table to match others
+euk_temp <- euk_temp %>%
+    rename("taxonomy-1" = Kingdom, "taxonomy-2" = Supergroup, "taxonomy-3" = Division, "taxonomy-4" = Class, "taxonomy-5" = Order, "taxonomy-6" = Family, "taxonomy-7" = Genus, "taxonomy-8" = Species)
+
+# build full dataframe with all 3 domains
+all_temp <- rbind(bac_temp, arch_temp, euk_temp)
+
+# remake into graph
+grph.top300.oxycline <- graph_from_data_frame(grph.top300_oxycline_df$edges,
+                                   directed = F,
+                                   vertices = all_temp)
+
+# Make color paletter for domain
+dtype = c("red", "green", "blue", "grey")
+# Make color vector
+domain_color_top300_oxycline <- dtype[as.numeric(as.factor(V(grph.top300.oxycline)$"taxonomy-1"))]
+
+
+# Plot
+plot(grph.top300.oxycline,
+     vertex.label=NA,
+     layout=layout_with_graphopt(grph.top300.oxycline),
+     vertex.color=domain_color_top300_oxycline)
+title("SpiecEasi Network: All domains, Oxycline")
+legend("topright",bty = "n",
+       legend=c("Archaea", "Bacteria", "Eukarya", "No Blast Hit"),
+       fill=c("red","green","blue", "grey"), border=NA)
+
+# Save plot
+setEPS()
+postscript(file = "Figures/3domains_top300_oxycline_spieceasi_network.eps", width = 5.5, height = 5)
+plot(grph.top300.oxycline,
+     vertex.label=NA,
+     layout=layout_with_graphopt(grph.top300.oxycline),
+     vertex.color=domain_color_top300_oxycline)
+title("SpiecEasi Network: All domains, Oxycline")
+legend("topright",bty = "n",
+       legend=c("Archaea", "Bacteria", "Eukarya", "No Blast Hit"),
+       fill=c("red","green","blue", "grey"), border=NA)
+dev.off()
+```
+
+
+#### Positive and negative edges separately
+```{r}
+# Subset based on pos or neg edges
+grph.top300.oxycline.pos <-delete.edges(grph.top300.oxycline, which(E(grph.top300.oxycline)$weight<0))
+grph.top300.oxycline.neg <-delete.edges(grph.top300.oxycline, which(E(grph.top300.oxycline)$weight>0))
+
+# For each subsetted graph, remove those nodes that are no longer connected to anything
+grph.top300.oxycline.pos <- delete.vertices(grph.top300.oxycline.pos, which(degree(grph.top300.oxycline.pos)==0))
+grph.top300.oxycline.neg <- delete.vertices(grph.top300.oxycline.neg, which(degree(grph.top300.oxycline.neg)==0))
+
+# Make color vector for each
+domain_color_top300_oxycline_pos <- dtype[as.numeric(as.factor(V(grph.top300.oxycline.pos)$"taxonomy-1"))]
+domain_color_top300_oxycline_neg <- dtype[as.numeric(as.factor(V(grph.top300.oxycline.neg)$"taxonomy-1"))]
+
+# Plot pos
+plot(grph.top300.oxycline.pos,
+     vertex.label=NA,
+     layout=layout_with_graphopt(grph.top300.oxycline.pos),
+     vertex.color=domain_color_top300_oxycline_pos)
+title("SpiecEasi Network: All domains, Positive Edges only, oxycline")
+legend("topright",bty = "n",
+       legend=c("Archaea", "Bacteria", "Eukarya", "No Blast Hit"),
+       fill=c("red","green","blue", "grey"), border=NA)
+
+# Plot neg
+plot(grph.top300.oxycline.neg,
+     vertex.label=NA,
+     layout=layout_with_graphopt(grph.top300.oxycline.neg),
+     vertex.color=domain_color_top300_oxycline_neg)
+title("SpiecEasi Network: All domains, Negative Edges Only, oxycline")
+legend("topright",bty = "n",
+       legend=c("Archaea", "Bacteria", "Eukarya", "No Blast Hit"),
+       fill=c("red","green","blue", "grey"), border=NA)
+
+
+# Save plots
+setEPS()
+postscript(file = "Figures/3domains_top300_posedges_oxycline_spieceasi_network.eps", width = 5.5, height = 5)
+plot(grph.top300.oxycline.pos,
+     vertex.label=NA,
+     layout=layout_with_graphopt(grph.top300.oxycline.pos),
+     vertex.color=domain_color_top300_oxycline_pos)
+title("SpiecEasi Network: All domains, Positive Edges Only, oxycline")
+legend("topright",bty = "n",
+       legend=c("Archaea", "Bacteria", "Eukarya", "No Blast Hit"),
+       fill=c("red","green","blue", "grey"), border=NA)
+dev.off()
+
+setEPS()
+postscript(file = "Figures/3domains_top300_negedges_oxycline_spieceasi_network.eps", width = 5.5, height = 5)
+plot(grph.top300.oxycline.neg,
+     vertex.label=NA,
+     layout=layout_with_graphopt(grph.top300.oxycline.neg),
+     vertex.color=domain_color_top300_oxycline_neg)
+title("SpiecEasi Network: All domains, Negative Edges Only, oxycline")
+legend("topright",bty = "n",
+       legend=c("Archaea", "Bacteria", "Eukarya", "No Blast Hit"),
+       fill=c("red","green","blue", "grey"), border=NA)
+
+dev.off()
+```
+
+
+
+
+### Anoxic dataset
+First extract ASV names from original phyloseq objects in order to retain for network nodes. Make sure these are in same order in which they went in SpiecEasi
+```{r}
+rm(se_3domains_top100_oxycline)
+load("EnvironmentBackups/CariacoEuks_revisions2_additionalvars_4.RData")
+
+top300_anoxic_df <- bind_rows(data.frame(otu_table(ps_bac_pruned_3domains_top100_anoxic)), data.frame(otu_table(ps_arch_pruned_3domains_top100_anoxic)), data.frame(otu_table(ps_euk_pruned_3domains_top100_anoxic)))
+top300_anoxic_df
+```
+
+
+```{r}
+#Extract adjacency matrix from spiecEasi output
+adj.mat <- getRefit(se_3domains_top100_anoxic)
+table(as.numeric(adj.mat))
+
+# Extract weighted adjacency
+se.cor  <- cov2cor(as.matrix(getOptCov(se_3domains_top100_anoxic)))
+weighted.adj.mat <- se.cor*getRefit(se_3domains_top100_anoxic)
+
+#Convert to graph objects
+grph.unweighted.top300.anoxic <- adj2igraph(adj.mat)
+grph.top300.anoxic <- adj2igraph(weighted.adj.mat)
+
+
+# Put back in species names
+V(grph.top300.anoxic)$name <- rownames(top300_anoxic_df)
+
+
+# Make size of nodes proportional to degree (number of connections)
+V(grph.top300.anoxic)$size <- (degree(grph.top300.anoxic) + 1) # the +1 avoids size zero vertices
+
+# Change width of edges to be proportional to their weights
+E(grph.top300.anoxic)$width <- abs(E(grph.top300.anoxic)$weight)*10
+
+# Scale node sizes to be smaller
+V(grph.top300.anoxic)$size <- V(grph.top300.anoxic)$size/2
+
+# Join taxonomy data of each node
+# Convert graph to datafram
+grph.top300_anoxic_df <- igraph::as_data_frame(grph.top300.anoxic, 'both')
+
+# make formatted taxonomy tables for each domain
+bac_top100_tax_table <- as.data.frame(tax_table(ps_bac_pruned_3domains_top100_anoxic)) %>%
+  mutate(name = rownames(tax_table(ps_bac_pruned_3domains_top100_anoxic)))
+arch_top100_tax_table <- as.data.frame(tax_table(ps_arch_pruned_3domains_top100_anoxic)) %>%
+  mutate(name = rownames(tax_table(ps_arch_pruned_3domains_top100_anoxic)))
+euk_top100_tax_table <- as.data.frame(tax_table(ps_euk_pruned_3domains_top100_anoxic)) %>%
+  mutate(name = rownames(tax_table(ps_euk_pruned_3domains_top100_anoxic)))
+
+#link graph data frame to formatted taxonomy tables
+bac_temp <- left_join(grph.top300_anoxic_df$vertices[1:ntaxa(ps_bac_pruned_3domains_top100_anoxic),],
+bac_top100_tax_table, by = "name")
+# delete columns that don't match other tax tables
+bac_temp <- select(bac_temp, -"taxonomy-9", -"Refined taxonomy")
+
+arch_temp <- left_join(grph.top300_anoxic_df$vertices[ntaxa(ps_arch_pruned_3domains_top100_anoxic)+1:ntaxa(ps_arch_pruned_3domains_top100_anoxic),],arch_top100_tax_table, by = "name")
+
+euk_temp <- left_join(grph.top300_anoxic_df$vertices[ntaxa(ps_euk_pruned_3domains_top100_anoxic)+ntaxa(ps_euk_pruned_3domains_top100_anoxic)+1:ntaxa(ps_euk_pruned_3domains_top100_anoxic),], euk_top100_tax_table, by = "name")
+
+# rename column names in euk table to match others
+euk_temp <- euk_temp %>%
+    rename("taxonomy-1" = Kingdom, "taxonomy-2" = Supergroup, "taxonomy-3" = Division, "taxonomy-4" = Class, "taxonomy-5" = Order, "taxonomy-6" = Family, "taxonomy-7" = Genus, "taxonomy-8" = Species)
+
+# build full dataframe with all 3 domains
+all_temp <- rbind(bac_temp, arch_temp, euk_temp)
+
+# remake into graph
+grph.top300.anoxic <- graph_from_data_frame(grph.top300_anoxic_df$edges,
+                                   directed = F,
+                                   vertices = all_temp)
+
+# Make color paletter for domain
+dtype = c("red", "green", "blue", "grey")
+# Make color vector
+domain_color_top300_anoxic <- dtype[as.numeric(as.factor(V(grph.top300.anoxic)$"taxonomy-1"))]
+
+
+# Plot
+plot(grph.top300.anoxic,
+     vertex.label=NA,
+     layout=layout_with_graphopt(grph.top300.anoxic),
+     vertex.color=domain_color_top300_anoxic)
+title("SpiecEasi Network: All domains, anoxic")
+legend("topright",bty = "n",
+       legend=c("Archaea", "Bacteria", "Eukarya", "No Blast Hit"),
+       fill=c("red","green","blue", "grey"), border=NA)
+
+# Save plot
+setEPS()
+postscript(file = "Figures/3domains_top300_anoxic_spieceasi_network.eps", width = 5.5, height = 5)
+plot(grph.top300.anoxic,
+     vertex.label=NA,
+     layout=layout_with_graphopt(grph.top300.anoxic),
+     vertex.color=domain_color_top300_anoxic)
+title("SpiecEasi Network: All domains, anoxic")
+legend("topright",bty = "n",
+       legend=c("Archaea", "Bacteria", "Eukarya", "No Blast Hit"),
+       fill=c("red","green","blue", "grey"), border=NA)
+dev.off()
+```
+
+
+
+#### Positive and negative edges separately
+```{r}
+# Subset based on pos or neg edges
+grph.top300.anoxic.pos <-delete.edges(grph.top300.anoxic, which(E(grph.top300.anoxic)$weight<0))
+grph.top300.anoxic.neg <-delete.edges(grph.top300.anoxic, which(E(grph.top300.anoxic)$weight>0))
+
+# For each subsetted graph, remove those nodes that are no longer connected to anything
+grph.top300.anoxic.pos <- delete.vertices(grph.top300.anoxic.pos, which(degree(grph.top300.anoxic.pos)==0))
+grph.top300.anoxic.neg <- delete.vertices(grph.top300.anoxic.neg, which(degree(grph.top300.anoxic.neg)==0))
+
+# Make color vector for each
+domain_color_top300_anoxic_pos <- dtype[as.numeric(as.factor(V(grph.top300.anoxic.pos)$"taxonomy-1"))]
+domain_color_top300_anoxic_neg <- dtype[as.numeric(as.factor(V(grph.top300.anoxic.neg)$"taxonomy-1"))]
+
+# Plot pos
+plot(grph.top300.anoxic.pos,
+     vertex.label=NA,
+     layout=layout_with_graphopt(grph.top300.anoxic.pos),
+     vertex.color=domain_color_top300_anoxic_pos)
+title("SpiecEasi Network: All domains, Positive Edges only, anoxic")
+legend("topright",bty = "n",
+       legend=c("Archaea", "Bacteria", "Eukarya", "No Blast Hit"),
+       fill=c("red","green","blue", "grey"), border=NA)
+
+# Plot neg
+plot(grph.top300.anoxic.neg,
+     vertex.label=NA,
+     layout=layout_with_graphopt(grph.top300.anoxic.neg),
+     vertex.color=domain_color_top300_anoxic_neg)
+title("SpiecEasi Network: All domains, Negative Edges Only, anoxic")
+legend("topright",bty = "n",
+       legend=c("Archaea", "Bacteria", "Eukarya", "No Blast Hit"),
+       fill=c("red","green","blue", "grey"), border=NA)
+
+
+# Save plots
+setEPS()
+postscript(file = "Figures/3domains_top300_posedges_anoxic_spieceasi_network.eps", width = 5.5, height = 5)
+plot(grph.top300.anoxic.pos,
+     vertex.label=NA,
+     layout=layout_with_graphopt(grph.top300.anoxic.pos),
+     vertex.color=domain_color_top300_anoxic_pos)
+title("SpiecEasi Network: All domains, Positive Edges Only, anoxic")
+legend("topright",bty = "n",
+       legend=c("Archaea", "Bacteria", "Eukarya", "No Blast Hit"),
+       fill=c("red","green","blue", "grey"), border=NA)
+dev.off()
+
+setEPS()
+postscript(file = "Figures/3domains_top300_negedges_anoxic_spieceasi_network.eps", width = 5.5, height = 5)
+plot(grph.top300.anoxic.neg,
+     vertex.label=NA,
+     layout=layout_with_graphopt(grph.top300.anoxic.neg),
+     vertex.color=domain_color_top300_anoxic_neg)
+title("SpiecEasi Network: All domains, Negative Edges Only, anoxic")
+legend("topright",bty = "n",
+       legend=c("Archaea", "Bacteria", "Eukarya", "No Blast Hit"),
+       fill=c("red","green","blue", "grey"), border=NA)
+
+dev.off()
+```
+
+
+
+
+
+### Full dataset, with no parasites
+First extract ASV names from original phyloseq objects in order to retain for network nodes. Make sure these are in same order in which they went in SpiecEasi
+```{r}
+rm(se_3domains_top100_anoxic)
+load("EnvironmentBackups/CariacoEuks_revisions2_additionalvars_5.RData")
+
+top300_df_nonparasites <- bind_rows(data.frame(otu_table(ps_bac_top100)), data.frame(otu_table(ps_arch_top100)), data.frame(otu_table(ps_euk_nonparasites_top100)))
+top300_df_nonparasites
+```
+
+
+```{r}
+#Extract adjacency matrix from spiecEasi output
+adj.mat <- getRefit(se_3domains_top100_nonparasites)
+table(as.numeric(adj.mat))
+
+# Extract weighted adjacency
+se.cor  <- cov2cor(as.matrix(getOptCov(se_3domains_top100_nonparasites)))
+weighted.adj.mat <- se.cor*getRefit(se_3domains_top100_nonparasites)
+
+#Convert to graph objects
+grph.unweighted.top300.nonparasites <- adj2igraph(adj.mat)
+grph.top300.nonparasites <- adj2igraph(weighted.adj.mat)
+
+
+# Put back in species names
+V(grph.top300.nonparasites)$name <- rownames(top300_df_nonparasites)
+
+
+# Make size of nodes proportional to degree (number of connections)
+V(grph.top300.nonparasites)$size <- (degree(grph.top300.nonparasites) + 1) # the +1 avoids size zero vertices
+
+# Change width of edges to be proportional to their weights
+E(grph.top300.nonparasites)$width <- abs(E(grph.top300.nonparasites)$weight)*10
+
+# Scale node sizes to be smaller
+V(grph.top300.nonparasites)$size <- V(grph.top300.nonparasites)$size/2
+
+# Join taxonomy data of each node
+# Convert graph to datafram
+grph.top300.nonparasites_df <- igraph::as_data_frame(grph.top300.nonparasites, 'both')
+
+# make formatted taxonomy tables for each domain
+bac_top100_tax_table <- as.data.frame(tax_table(ps_bac_pruned_3domains_top100)) %>%
+  mutate(name = rownames(tax_table(ps_bac_pruned_3domains_top100)))
+arch_top100_tax_table <- as.data.frame(tax_table(ps_arch_pruned_3domains_top100)) %>%
+  mutate(name = rownames(tax_table(ps_arch_pruned_3domains_top100)))
+euk_top100_tax_table <- as.data.frame(tax_table(ps_euk_nonparasites_pruned_3domains_top100)) %>%
+  mutate(name = rownames(tax_table(ps_euk_nonparasites_pruned_3domains_top100)))
+
+#link graph data frame to formatted taxonomy tables
+bac_temp <- left_join(grph.top300.nonparasites_df$vertices[1:ntaxa(ps_bac_pruned_3domains_top100),],
+bac_top100_tax_table, by = "name")
+# delete columns that don't match other tax tables
+bac_temp <- select(bac_temp, -"taxonomy-9", -"Refined taxonomy")
+
+arch_temp <- left_join(grph.top300.nonparasites_df$vertices[ntaxa(ps_arch_pruned_3domains_top100)+1:ntaxa(ps_arch_pruned_3domains_top100),],arch_top100_tax_table, by = "name")
+
+euk_temp <- left_join(grph.top300.nonparasites_df$vertices[ntaxa(ps_euk_nonparasites_pruned_3domains_top100)+ntaxa(ps_euk_nonparasites_pruned_3domains_top100)+1:ntaxa(ps_euk_nonparasites_pruned_3domains_top100),], euk_top100_tax_table, by = "name")
+
+# rename column names in euk table to match others
+euk_temp <- euk_temp %>%
+    rename("taxonomy-1" = Kingdom, "taxonomy-2" = Supergroup, "taxonomy-3" = Division, "taxonomy-4" = Class, "taxonomy-5" = Order, "taxonomy-6" = Family, "taxonomy-7" = Genus, "taxonomy-8" = Species)
+
+# build full dataframe with all 3 domains
+all_temp <- rbind(bac_temp, arch_temp, euk_temp)
+
+# remake into graph
+grph.top300.nonparasites <- graph_from_data_frame(grph.top300.nonparasites_df$edges,
+                                   directed = F,
+                                   vertices = all_temp)
+
+# Make color paletter for domain
+dtype = c("red", "green", "blue", "grey")
+# Make color vector
+domain_color_top300_nonparasites <- dtype[as.numeric(as.factor(V(grph.top300.nonparasites)$"taxonomy-1"))]
+
+
+# Plot
+plot(grph.top300.nonparasites,
+     vertex.label=NA,
+     layout=layout_with_graphopt(grph.top300.nonparasites),
+     vertex.color=domain_color_top300_nonparasites)
+title("SpiecEasi Network: All domains, no parasites")
+legend("topright",bty = "n",
+       legend=c("Archaea", "Bacteria", "Eukarya", "No blast hit"),
+       fill=c("red","green","blue", "grey"), border=NA)
+
+# Save plot
+setEPS()
+postscript(file = "Figures/3domains_nonparasites_top300_spieceasi_network.eps", width = 5.5, height = 5)
+plot(grph.top300.nonparasites,
+     vertex.label=NA,
+     layout=layout_with_graphopt(grph.top300.nonparasites),
+     vertex.color=domain_color_top300_nonparasites)
+title("SpiecEasi Network: All domains, No parasites")
+legend("topright",bty = "n",
+       legend=c("Archaea", "Bacteria", "Eukarya", "No blast hit"),
+       fill=c("red","green","blue", "grey"), border=NA)
+dev.off()
+```
+
+
+
+#### Positive and negative edges separately
+```{r}
+# Subset based on pos or neg edges
+grph.top300.nonparasites.pos <-delete.edges(grph.top300.nonparasites, which(E(grph.top300.nonparasites)$weight<0))
+grph.top300.nonparasites.neg <-delete.edges(grph.top300.nonparasites, which(E(grph.top300.nonparasites)$weight>0))
+
+# For each subsetted graph, remove those nodes that are no longer connected to anything
+grph.top300.nonparasites.pos <- delete.vertices(grph.top300.nonparasites.pos, which(degree(grph.top300.nonparasites.pos)==0))
+grph.top300.nonparasites.neg <- delete.vertices(grph.top300.nonparasites.neg, which(degree(grph.top300.nonparasites.neg)==0))
+
+# Make color vector for each
+domain_color_top300_nonparasites_pos <- dtype[as.numeric(as.factor(V(grph.top300.nonparasites.pos)$"taxonomy-1"))]
+domain_color_top300_nonparasites_neg <- dtype[as.numeric(as.factor(V(grph.top300.nonparasites.neg)$"taxonomy-1"))]
+
+# Plot pos
+plot(grph.top300.nonparasites.pos,
+     vertex.label=NA,
+     layout=layout_with_graphopt(grph.top300.nonparasites.pos),
+     vertex.color=domain_color_top300_nonparasites_pos)
+title("SpiecEasi Network: All domains, Positive Edges only")
+legend("topright",bty = "n",
+       legend=c("Archaea", "Bacteria", "Eukarya", "No Blast Hit"),
+       fill=c("red","green","blue", "grey"), border=NA)
+
+# Plot neg
+plot(grph.top300.nonparasites.neg,
+     vertex.label=NA,
+     layout=layout_with_graphopt(grph.top300.nonparasites.neg),
+     vertex.color=domain_color_top300_nonparasites_neg)
+title("SpiecEasi Network: All domains, No Parasites, Negative Edges Only")
+legend("topright",bty = "n",
+       legend=c("Archaea", "Bacteria", "Eukarya", "No Blast Hit"),
+       fill=c("red","green","blue", "grey"), border=NA)
+
+
+# Save plots
+setEPS()
+postscript(file = "Figures/3domains_nonparasites_top300_posedges_spieceasi_network.eps", width = 5.5, height = 5)
+plot(grph.top300.nonparasites.pos,
+     vertex.label=NA,
+     layout=layout_with_graphopt(grph.top300.nonparasites.pos),
+     vertex.color=domain_color_top300_nonparasites_pos)
+title("SpiecEasi Network: All domains, No Parasites, Positive Edges Only, Oxycline")
+legend("topright",bty = "n",
+       legend=c("Archaea", "Bacteria", "Eukarya", "No Blast Hit"),
+       fill=c("red","green","blue", "grey"), border=NA)
+dev.off()
+
+setEPS()
+postscript(file = "Figures/3domains_nonparasites_top300_negedges_spieceasi_network.eps", width = 5.5, height = 5)
+plot(grph.top300.nonparasites.neg,
+     vertex.label=NA,
+     layout=layout_with_graphopt(grph.top300.nonparasites.neg),
+     vertex.color=domain_color_top300_nonparasites_neg)
+title("SpiecEasi Network: All domains, No Parasites, Negative Edges Only")
+legend("topright",bty = "n",
+       legend=c("Archaea", "Bacteria", "Eukarya", "No Blast Hit"),
+       fill=c("red","green","blue", "grey"), border=NA)
+
+dev.off()
+```
+
+
+
+
+### Full dataset, with only parasites from euks
+First extract ASV names from original phyloseq objects in order to retain for network nodes. Make sure these are in same order in which they went in SpiecEasi
+```{r}
+rm(se_3domains_top100_nonparasites)
+load("EnvironmentBackups/CariacoEuks_revisions2_additionalvars_6.RData")
+
+top300_df_parasites <- bind_rows(data.frame(otu_table(ps_bac_top100)), data.frame(otu_table(ps_arch_top100)), data.frame(otu_table(ps_euk_parasites_top100)))
+top300_df_parasites
+```
+
+
+```{r}
+#Extract adjacency matrix from spiecEasi output
+adj.mat <- getRefit(se_3domains_top100_parasites)
+table(as.numeric(adj.mat))
+
+# Extract weighted adjacency
+se.cor  <- cov2cor(as.matrix(getOptCov(se_3domains_top100_parasites)))
+weighted.adj.mat <- se.cor*getRefit(se_3domains_top100_parasites)
+
+#Convert to graph objects
+grph.unweighted.top300.parasites <- adj2igraph(adj.mat)
+grph.top300.parasites <- adj2igraph(weighted.adj.mat)
+
+
+# Put back in species names
+V(grph.top300.parasites)$name <- rownames(top300_df_parasites)
+
+
+# Make size of nodes proportional to degree (number of connections)
+V(grph.top300.parasites)$size <- (degree(grph.top300.parasites) + 1) # the +1 avoids size zero vertices
+
+# Change width of edges to be proportional to their weights
+E(grph.top300.parasites)$width <- abs(E(grph.top300.parasites)$weight)*10
+
+# Scale node sizes to be smaller
+V(grph.top300.parasites)$size <- V(grph.top300.parasites)$size/2
+
+# Join taxonomy data of each node
+# Convert graph to datafram
+grph.top300.parasites_df <- igraph::as_data_frame(grph.top300.parasites, 'both')
+
+# make formatted taxonomy tables for each domain
+bac_top100_tax_table <- as.data.frame(tax_table(ps_bac_pruned_3domains_top100)) %>%
+  mutate(name = rownames(tax_table(ps_bac_pruned_3domains_top100)))
+arch_top100_tax_table <- as.data.frame(tax_table(ps_arch_pruned_3domains_top100)) %>%
+  mutate(name = rownames(tax_table(ps_arch_pruned_3domains_top100)))
+euk_top100_tax_table <- as.data.frame(tax_table(ps_euk_parasites_pruned_3domains_top100)) %>%
+  mutate(name = rownames(tax_table(ps_euk_parasites_pruned_3domains_top100)))
+
+#link graph data frame to formatted taxonomy tables
+bac_temp <- left_join(grph.top300.parasites_df$vertices[1:ntaxa(ps_bac_pruned_3domains_top100),],
+bac_top100_tax_table, by = "name")
+# delete columns that don't match other tax tables
+bac_temp <- select(bac_temp, -"taxonomy-9", -"Refined taxonomy")
+
+arch_temp <- left_join(grph.top300.parasites_df$vertices[ntaxa(ps_arch_pruned_3domains_top100)+1:ntaxa(ps_arch_pruned_3domains_top100),],arch_top100_tax_table, by = "name")
+
+euk_temp <- left_join(grph.top300.parasites_df$vertices[ntaxa(ps_euk_parasites_pruned_3domains_top100)+ntaxa(ps_euk_parasites_pruned_3domains_top100)+1:ntaxa(ps_euk_parasites_pruned_3domains_top100),], euk_top100_tax_table, by = "name")
+
+# rename column names in euk table to match others
+euk_temp <- euk_temp %>%
+    rename("taxonomy-1" = Kingdom, "taxonomy-2" = Supergroup, "taxonomy-3" = Division, "taxonomy-4" = Class, "taxonomy-5" = Order, "taxonomy-6" = Family, "taxonomy-7" = Genus, "taxonomy-8" = Species)
+
+# build full dataframe with all 3 domains
+all_temp <- rbind(bac_temp, arch_temp, euk_temp)
+
+# remake into graph
+grph.top300.parasites <- graph_from_data_frame(grph.top300.parasites_df$edges,
+                                   directed = F,
+                                   vertices = all_temp)
+
+# Make color paletter for domain
+dtype = c("red", "green", "blue", "grey")
+# Make color vector
+domain_color_top300_parasites <- dtype[as.numeric(as.factor(V(grph.top300.parasites)$"taxonomy-1"))]
+
+
+# Plot
+plot(grph.top300.parasites,
+     vertex.label=NA,
+     layout=layout_with_graphopt(grph.top300.parasites),
+     vertex.color=domain_color_top300_parasites)
+title("SpiecEasi Network: All domains, Parasitic Eukaryotes Only")
+legend("topright",bty = "n",
+       legend=c("Archaea", "Bacteria", "Eukarya", "No blast hit"),
+       fill=c("red","green","blue", "grey"), border=NA)
+
+# Save plot
+setEPS()
+postscript(file = "Figures/3domains_parasites_top300_spieceasi_network.eps", width = 5.5, height = 5)
+plot(grph.top300.parasites,
+     vertex.label=NA,
+     layout=layout_with_graphopt(grph.top300.parasites),
+     vertex.color=domain_color_top300_parasites)
+title("SpiecEasi Network: All domains, Parasitic Eukaryotes Only")
+legend("topright",bty = "n",
+       legend=c("Archaea", "Bacteria", "Eukarya", "No blast hit"),
+       fill=c("red","green","blue", "grey"), border=NA)
+dev.off()
+```
+
+
+
+#### Positive and negative edges separately
+```{r}
+# Subset based on pos or neg edges
+grph.top300.parasites.pos <-delete.edges(grph.top300.parasites, which(E(grph.top300.parasites)$weight<0))
+grph.top300.parasites.neg <-delete.edges(grph.top300.parasites, which(E(grph.top300.parasites)$weight>0))
+
+# For each subsetted graph, remove those nodes that are no longer connected to anything
+grph.top300.parasites.pos <- delete.vertices(grph.top300.parasites.pos, which(degree(grph.top300.parasites.pos)==0))
+grph.top300.parasites.neg <- delete.vertices(grph.top300.parasites.neg, which(degree(grph.top300.parasites.neg)==0))
+
+# Make color vector for each
+domain_color_top300_parasites_pos <- dtype[as.numeric(as.factor(V(grph.top300.parasites.pos)$"taxonomy-1"))]
+domain_color_top300_parasites_neg <- dtype[as.numeric(as.factor(V(grph.top300.parasites.neg)$"taxonomy-1"))]
+
+# Plot pos
+plot(grph.top300.parasites.pos,
+     vertex.label=NA,
+     layout=layout_with_graphopt(grph.top300.parasites.pos),
+     vertex.color=domain_color_top300_parasites_pos)
+title("SpiecEasi Network: All domains, Positive Edges only")
+legend("topright",bty = "n",
+       legend=c("Archaea", "Bacteria", "Eukarya", "No Blast Hit"),
+       fill=c("red","green","blue", "grey"), border=NA)
+
+# Plot neg
+plot(grph.top300.parasites.neg,
+     vertex.label=NA,
+     layout=layout_with_graphopt(grph.top300.parasites.neg),
+     vertex.color=domain_color_top300_parasites_neg)
+title("SpiecEasi Network: All domains, No Parasites, Negative Edges Only")
+legend("topright",bty = "n",
+       legend=c("Archaea", "Bacteria", "Eukarya", "No Blast Hit"),
+       fill=c("red","green","blue", "grey"), border=NA)
+
+
+# Save plots
+setEPS()
+postscript(file = "Figures/3domains_parasites_top300_posedges_spieceasi_network.eps", width = 5.5, height = 5)
+plot(grph.top300.parasites.pos,
+     vertex.label=NA,
+     layout=layout_with_graphopt(grph.top300.parasites.pos),
+     vertex.color=domain_color_top300_parasites_pos)
+title("SpiecEasi Network: All domains, No Parasites, Positive Edges Only, Oxycline")
+legend("topright",bty = "n",
+       legend=c("Archaea", "Bacteria", "Eukarya", "No Blast Hit"),
+       fill=c("red","green","blue", "grey"), border=NA)
+dev.off()
+
+setEPS()
+postscript(file = "Figures/3domains_parasites_top300_negedges_spieceasi_network.eps", width = 5.5, height = 5)
+plot(grph.top300.parasites.neg,
+     vertex.label=NA,
+     layout=layout_with_graphopt(grph.top300.parasites.neg),
+     vertex.color=domain_color_top300_parasites_neg)
+title("SpiecEasi Network: All domains, No Parasites, Negative Edges Only")
+legend("topright",bty = "n",
+       legend=c("Archaea", "Bacteria", "Eukarya", "No Blast Hit"),
+       fill=c("red","green","blue", "grey"), border=NA)
+
+dev.off()
+```
+
+### Save and re-load
+```{r}
+# remove some of the large spieceasi objects. Have used these to create downstream variables at this point
+rm(se, se_3domains_top100_parasites, se.2domains, se.anoxic, se.cor, se.euxinic,se.oxycline)
+# save
+save.image("EnvironmentBackups/CariacoEuks_postanalysis_vars_upto_Oct2021_newNetworks.RData")
+```
+
+Or load if coming back
+```{r}
+load("EnvironmentBackups/CariacoEuks_postanalysis_vars_upto_Oct2021_newNetworks.RData")
+```
+
+
+
+
+### Summary network figures for manuscript
+Using the new, size-controlled network plots
+
+First- All depths, oxycline, anoxic networks:
+```{r}
+# Set up in panels
+op <- par(oma=c(2,.5,.5,0),# Room for the titles and legend
+  mfrow=c(3,2),
+  mai=c(.15,.3,.15,.1))
+# Panel 1- All depths, positive network
+plot(grph.top300.pos,
+     vertex.label=NA,
+     layout=layout_with_graphopt(grph.top300.pos),
+     vertex.color=domain_color_top300_pos)
+mtext ("Positive", side = 3, outer = TRUE, line = -1, adj = 0.22, cex = .8)
+mtext("All depths", side=2, cex = .8, line = 1.5)
+# Panel 2- All depths, negative network
+plot(grph.top300.2domains.neg,
+     vertex.label=NA,
+     layout=layout_with_graphopt(grph.top300.2domains.neg),
+     vertex.color=domain_color_top300_neg)
+mtext ("Negative", side = 3, outer = TRUE, line = -1, adj = .8, cex = .8)
+# Panel 3- Oxycline, positive network
+plot(grph.top300.oxycline.pos,
+     vertex.label=NA,
+     layout=layout_with_graphopt(grph.top300.oxycline.pos),
+     vertex.color=domain_color_top300_oxycline_pos)
+mtext("Oxycline", side=2, cex = .8, line = 1.5)
+# Panel 4- Oxycline, negative network
+plot(grph.top300.oxycline.neg,
+     vertex.label=NA,
+     layout=layout_with_graphopt(grph.top300.oxycline.neg),
+     vertex.color=domain_color_top300_oxycline_neg)
+# Panel 5- Anoxic, positive network
+plot(grph.top300.anoxic.pos,
+     vertex.label=NA,
+     layout=layout_with_graphopt(grph.top300.anoxic.pos),
+     vertex.color=domain_color_top300_anoxic_pos)
+mtext("Anoxic", side=2, cex = .8, line = 1.5)
+# Panel 6- Anoxic, negative network
+plot(grph.top300.anoxic.neg,
+     vertex.label=NA,
+     layout=layout_with_graphopt(grph.top300.anoxic.neg),
+     vertex.color=domain_color_top300_anoxic_neg)
+# Add legend
+par(op) # Leave the last plot
+op <- par(usr=c(0,1,0,1), # Reset the coordinates
+          xpd=NA)         # Allow plotting outside the plot region
+legend(.15,-0.04, c("Archaea","Bacteria", "Eukarya", "No Blast Hit"), col=c("red", "green", "blue", "grey"), pch = c(16), box.col=NA, cex = .8, horiz = T, x.intersp = c(0.3))
+
+
+# Save figure
+# Set up EPS and make plot
+setEPS(width = 6, height = 7)
+postscript("Figures/Networks_pos_neg_all_oxycline_anox_Nov21.eps")
+# Set up in panels
+op <- par(oma=c(2,.5,.5,0),# Room for the titles and legend
+  mfrow=c(3,2),
+  mai=c(.15,.3,.15,.1))
+# Panel 1- All depths, positive network
+plot(grph.top300.pos,
+     vertex.label=NA,
+     layout=layout_with_graphopt(grph.top300.pos),
+     vertex.color=domain_color_top300_pos)
+mtext ("Positive", side = 3, outer = TRUE, line = -1, adj = 0.22, cex = .8)
+mtext("All depths", side=2, cex = .8, line = 1.5)
+# Panel 2- All depths, negative network
+plot(grph.top300.neg,
+     vertex.label=NA,
+     layout=layout_with_graphopt(grph.top300.neg),
+     vertex.color=domain_color_top300_neg)
+mtext ("Negative", side = 3, outer = TRUE, line = -1, adj = .8, cex = .8)
+# Panel 3- Oxycline, positive network
+plot(grph.top300.oxycline.pos,
+     vertex.label=NA,
+     layout=layout_with_graphopt(grph.top300.oxycline.pos),
+     vertex.color=domain_color_top300_oxycline_pos)
+mtext("Oxycline", side=2, cex = .8, line = 1.5)
+# Panel 4- Oxycline, negative network
+plot(grph.top300.oxycline.neg,
+     vertex.label=NA,
+     layout=layout_with_graphopt(grph.top300.oxycline.neg),
+     vertex.color=domain_color_top300_oxycline_neg)
+# Panel 5- Anoxic, positive network
+plot(grph.top300.anoxic.pos,
+     vertex.label=NA,
+     layout=layout_with_graphopt(grph.top300.anoxic.pos),
+     vertex.color=domain_color_top300_anoxic_pos)
+mtext("Anoxic", side=2, cex = .8, line = 1.5)
+# Panel 6- Anoxic, negative network
+plot(grph.top300.anoxic.neg,
+     vertex.label=NA,
+     layout=layout_with_graphopt(grph.top300.anoxic.neg),
+     vertex.color=domain_color_top300_anoxic_neg)
+# Add legend
+par(op) # Leave the last plot
+op <- par(usr=c(0,1,0,1), # Reset the coordinates
+          xpd=NA)         # Allow plotting outside the plot region
+legend(.15,-0.04, c("Archaea","Bacteria", "Eukarya", "No Blast Hit"), col=c("red", "green", "blue", "grey"), pch = c(16), box.col=NA, cex = .8, horiz = T, x.intersp = c(0.3))
+dev.off()
+
+
+
+```
+
+
+
+
+
+
+Second- No euks, no parasites, no nonparasites
+```{r}
+# Set up in panels
+op <- par(oma=c(2,.5,.5,0),# Room for the titles and legend
+  mfrow=c(3,2),
+  mai=c(.15,.3,.15,.1))
+# Panel 1- Euks removed, positive network
+plot(grph.top300.2domains.pos,
+     vertex.label=NA,
+     layout=layout_with_graphopt(grph.top300.2domains.pos),
+     vertex.color=domain_color_2domains_top300_pos)
+mtext ("Positive", side = 3, outer = TRUE, line = -1, adj = 0.22, cex = .8)
+mtext("Eukaryotes removed", side=2, cex = .8, line = 1.5)
+# Panel 2- Euks, negative network
+plot(grph.top300.2domains.neg,
+     vertex.label=NA,
+     layout=layout_with_graphopt(grph.top300.2domains.neg),
+     vertex.color=domain_color_2domains_top300_neg)
+mtext ("Negative", side = 3, outer = TRUE, line = -1, adj = .8, cex = .8)
+# Panel 3- Parasites removed, positive network
+plot(grph.top300.nonparasites.pos,
+     vertex.label=NA,
+     layout=layout_with_graphopt(grph.top300.nonparasites.pos),
+     vertex.color=domain_color_top300_nonparasites_pos)
+mtext("Parasites Removed", side=2, cex = .8, line = 1.5)
+# Panel 4- Parasites removed, negative network
+plot(grph.top300.nonparasites.neg,
+     vertex.label=NA,
+     layout=layout_with_graphopt(grph.top300.nonparasites.neg),
+     vertex.color=domain_color_top300_nonparasites_neg)
+# Panel 5- Nonparasites removed, positive network
+plot(grph.top300.parasites.pos,
+     vertex.label=NA,
+     layout=layout_with_graphopt(grph.top300.parasites.pos),
+     vertex.color=domain_color_top300_parasites_pos)
+mtext("Nonparasites Removed", side=2, cex = .8, line = 1.5)
+# Panel 6- Nonparasites removed, negative network
+plot(grph.top300.parasites.neg,
+     vertex.label=NA,
+     layout=layout_with_graphopt(grph.top300.parasites.neg),
+     vertex.color=domain_color_top300_parasites_neg)
+# Add legend
+par(op) # Leave the last plot
+op <- par(usr=c(0,1,0,1), # Reset the coordinates
+          xpd=NA)         # Allow plotting outside the plot region
+legend(.15,-0.04, c("Archaea","Bacteria", "Eukarya", "No Blast Hit"), col=c("red", "green", "blue", "grey"), pch = c(16), box.col=NA, cex = .8, horiz = T, x.intersp = c(0.3))
+
+
+# Save figure
+# Set up EPS and make plot
+setEPS(width = 6, height = 7)
+postscript("Figures/Networks_pos_neg_noeuks_noparasites_nononparasites_Nov21.eps")
+# Set up in panels
+op <- par(oma=c(2,.5,.5,0),# Room for the titles and legend
+  mfrow=c(3,2),
+  mai=c(.15,.3,.15,.1))
+# Panel 1- Euks removed, positive network
+plot(grph.top300.2domains.pos,
+     vertex.label=NA,
+     layout=layout_with_graphopt(grph.top300.2domains.pos),
+     vertex.color=domain_color_2domains_top300_pos)
+mtext ("Positive", side = 3, outer = TRUE, line = -1, adj = 0.22, cex = .8)
+mtext("Eukaryotes removed", side=2, cex = .8, line = 1.5)
+# Panel 2- Euks, negative network
+plot(grph.top300.2domains.neg,
+     vertex.label=NA,
+     layout=layout_with_graphopt(grph.top300.2domains.neg),
+     vertex.color=domain_color_2domains_top300_neg)
+mtext ("Negative", side = 3, outer = TRUE, line = -1, adj = .8, cex = .8)
+# Panel 3- Parasites removed, positive network
+plot(grph.top300.nonparasites.pos,
+     vertex.label=NA,
+     layout=layout_with_graphopt(grph.top300.nonparasites.pos),
+     vertex.color=domain_color_top300_nonparasites_pos)
+mtext("Parasites Removed", side=2, cex = .8, line = 1.5)
+# Panel 4- Parasites removed, negative network
+plot(grph.top300.nonparasites.neg,
+     vertex.label=NA,
+     layout=layout_with_graphopt(grph.top300.nonparasites.neg),
+     vertex.color=domain_color_top300_nonparasites_neg)
+# Panel 5- Nonparasites removed, positive network
+plot(grph.top300.parasites.pos,
+     vertex.label=NA,
+     layout=layout_with_graphopt(grph.top300.parasites.pos),
+     vertex.color=domain_color_top300_parasites_pos)
+mtext("Nonparasites Removed", side=2, cex = .8, line = 1.5)
+# Panel 6- Nonparasites removed, negative network
+plot(grph.top300.parasites.neg,
+     vertex.label=NA,
+     layout=layout_with_graphopt(grph.top300.parasites.neg),
+     vertex.color=domain_color_top300_parasites_neg)
+# Add legend
+par(op) # Leave the last plot
+op <- par(usr=c(0,1,0,1), # Reset the coordinates
+          xpd=NA)         # Allow plotting outside the plot region
+legend(.15,-0.04, c("Archaea","Bacteria", "Eukarya", "No Blast Hit"), col=c("red", "green", "blue", "grey"), pch = c(16), box.col=NA, cex = .8, horiz = T, x.intersp = c(0.3))
+dev.off()
+
+
+
+```
+
+
+
+
+
+
+
+
+
+
+
+### Collect network parameters
+From newly made graphs that control for network size
+
+#### Number of edges
+
+```{r}
+# total number of edges in full dataset network of top 300 OTUs/ ASVs
+length(E(grph.top300)$weight)
+# percent of neg edges 
+(sum(E(grph.top300)$weight<0)/length(E(grph.top300)$weight))*100
+
+# total number of edges in 2-domain dataset network
+length(E(grph.2domains.top300)$weight)
+# percent of neg edges 
+(sum(E(grph.2domains.top300)$weight<0)/length(E(grph.2domains.top300)$weight))*100
+
+# total number of edges in oxycline network
+length(E(grph.top300.oxycline)$weight)
+# percent of neg edges 
+(sum(E(grph.top300.oxycline)$weight<0)/length(E(grph.top300.oxycline)$weight))*100
+
+# total number of edges in anoxic network
+length(E(grph.top300.anoxic)$weight)
+# percent of neg edges 
+(sum(E(grph.top300.anoxic)$weight<0)/length(E(grph.top300.anoxic)$weight))*100
+
+# total number of edges in network with only nonparasite euks
+length(E(grph.top300.nonparasites)$weight)
+# percent of neg edges 
+(sum(E(grph.top300.nonparasites)$weight<0)/length(E(grph.top300.nonparasites)$weight))*100
+
+# total number of edges in network with only parasite euks
+length(E(grph.top300.parasites)$weight)
+# percent of neg edges 
+(sum(E(grph.top300.parasites)$weight<0)/length(E(grph.top300.parasites)$weight))*100
+
+```
+
+
+
+#### Edge density
+the number of edges relatives to total number of possible edges
+```{r}
+edge_density(grph.top300)*100
+edge_density(grph.2domains.top300)*100
+edge_density(grph.top300.oxycline)*100
+edge_density(grph.top300.anoxic)*100
+edge_density(grph.top300.nonparasites)*100
+edge_density(grph.top300.parasites)*100
+```
+
+#### Component
+The size of the components, or "clumps," in the network, and how many members in each
+```{r}
+# full dataset
+components(grph.top300)$no
+components(grph.top300)$csize
+
+# 2 domains
+components(grph.2domains.top300)$no
+components(grph.2domains.top300)$csize
+
+# oxycline
+components(grph.top300.oxycline)$no
+components(grph.top300.oxycline)$csize
+
+# anoxic
+components(grph.top300.anoxic)$no
+components(grph.top300.anoxic)$csize
+
+# nonparasites
+components(grph.top300.nonparasites)$no
+components(grph.top300.nonparasites)$csize
+
+# parasites
+components(grph.top300.parasites)$no
+components(grph.top300.parasites)$csize
+```
+
+The anoxic network is most disjointed, with 48 clumps and the largest containing only 24 members. The next is oxycline, with 32 clumps and the largest with 144 members. Then the full dataset has only 27 clumps and the largest clump contains 262 members.
+
+
+
+#### Average path length
+Path is the shortest distance between two nodes (fewest number of edges). Average path length of a network gives a sense of how connected every node is to another. Unconnected hubs in the netowrk will have "infinite" paths from other hubs. The function `mean_distance` ignores the infinite edges and calculates the average of all other edges
+```{r}
+mean_distance(grph.top300)
+mean_distance(grph.2domains.top300)
+mean_distance(grph.top300.oxycline)
+mean_distance(grph.top300.anoxic)
+mean_distance(grph.top300.nonparasites)
+mean_distance(grph.top300.parasites)
+```
+
+
+
+
+### Which ASVs are in positive vs negative networks?
+```{r}
+# Positive network- full dataset
+grph.pos_df <- igraph::as_data_frame(grph.top300.pos, 'both')
+grph.pos_df_vert <- grph.pos_df$vertices
+# How many Syndiniales and Polycystinea?
+as.data.frame(table(grph.pos_df_vert$"taxonomy-5"))
+# 25 Dino-Group-II
+# 1 Dino-Group-I
+# 28 Spumellarida
+
+
+# Negative network- full dataset
+grph.neg_df <- igraph::as_data_frame(grph.top300.neg, 'both')
+grph.neg_df_vert <- grph.neg_df$vertices
+# How many Syndiniales and Polycystinea?
+as.data.frame(table(grph.neg_df_vert$"taxonomy-5"))
+# 8 Dino-Group-II
+# 1 Dino-Group-I
+# 7 Spumellarida
+
+
+# Positive network- oxycline
+grph.pos_df <- igraph::as_data_frame(grph.top300.oxycline.pos, 'both')
+grph.pos_df_vert <- grph.pos_df$vertices
+# How many Syndiniales and Polycystinea?
+as.data.frame(table(grph.pos_df_vert$"taxonomy-5"))
+# 46 Dino-Group-II
+# 5 Dino-Group-I
+# 30 Spumellarida
+
+
+# Negative network- oxycline
+grph.neg_df <- igraph::as_data_frame(grph.top300.oxycline.neg, 'both')
+grph.neg_df_vert <- grph.neg_df$vertices
+# How many Syndiniales and Polycystinea?
+as.data.frame(table(grph.neg_df_vert$"taxonomy-5"))
+# 37 Dino-Group-II
+# 4 Dino-Group-I
+# 17 Spumellarida
+
+
+# Positive network- anoxic
+grph.pos_df <- igraph::as_data_frame(grph.top300.anoxic.pos, 'both')
+grph.pos_df_vert <- grph.pos_df$vertices
+# How many Syndiniales and Polycystinea?
+as.data.frame(table(grph.pos_df_vert$"taxonomy-5"))
+# 7 Dino-Group-II
+# 0 Dino-Group-I
+# 15 Spumellarida
+
+
+# Negative network- anoxic
+grph.neg_df <- igraph::as_data_frame(grph.top300.anoxic.neg, 'both')
+grph.neg_df_vert <- grph.neg_df$vertices
+# How many Syndiniales and Polycystinea?
+as.data.frame(table(grph.neg_df_vert$"taxonomy-5"))
+# 1 Dino-Group-II
+# 0 Dino-Group-I
+# 2 Spumellarida
+
+```
+
+### What are the interestined eukaryotic groups connected to?
+```{r}
+# Remake dataframe objects from full network graph objects
+grph.pos_df <- igraph::as_data_frame(grph.top300.pos, 'both')
+grph.pos_df_vert <- grph.pos_df$vertices
+grph.neg_df <- igraph::as_data_frame(grph.top300.neg, 'both')
+grph.neg_df_vert <- grph.neg_df$vertices
+
+# Positive associations: Syndiniales
+# Pull out names of Syndiniales and Spumellarida ASVs
+grph.pos_df_vert_synd <- filter(grph.pos_df_vert, `taxonomy-4` == "Syndiniales")
+# filter graph to include only edges connected to those nodes
+grph.pos_synd_edges <- E(grph.pos)[from(grph.pos_df_vert_synd$name)] # get edges
+grph.pos.synd_subgraph <- subgraph.edges(grph.pos, grph.pos_synd_edges) # filter graph
+# get taxonomy of remaining nodes, removing the Syndiniales from table (eg. only connected nodes) and grouping by taxonomy
+grph.pos_df_vert %>%
+  filter(`name` %in% V(grph.pos.synd_subgraph)$name & !`taxonomy-4` %in% c("Syndiniales")) %>%
+  count(`taxonomy-2`,`taxonomy-3`,`taxonomy-4`,`taxonomy-5`, name = "count", sort = TRUE)
+
+# Positive associations: Spumellarida
+grph.pos_df_vert_spum <- filter(grph.pos_df_vert, `taxonomy-5` == "Spumellarida")
+grph.pos_spum_edges <- E(grph.pos)[from(grph.pos_df_vert_spum$name)] 
+grph.pos.spum_subgraph <- subgraph.edges(grph.pos, grph.pos_spum_edges) 
+grph.pos_df_vert  %>% 
+  filter(`name` %in% V(grph.pos.spum_subgraph)$name & !`taxonomy-5` %in% c("Spumellarida")) %>%
+  count(`taxonomy-2`,`taxonomy-3`,`taxonomy-4`,`taxonomy-5`, name = "count", sort = TRUE)
+
+# Negative associations: Syndiniales
+grph.neg_df_vert_synd <- filter(grph.neg_df_vert, `taxonomy-4` == "Syndiniales")
+grph.neg_synd_edges <- E(grph.neg)[from(grph.neg_df_vert_synd$name)] 
+grph.neg.synd_subgraph <- subgraph.edges(grph.neg, grph.neg_synd_edges) 
+grph.neg_df_vert %>%
+  filter(`name` %in% V(grph.neg.synd_subgraph)$name & !`taxonomy-4` %in% c("Syndiniales")) %>%
+  count(`taxonomy-2`,`taxonomy-3`,`taxonomy-4`,`taxonomy-5`, name = "count", sort = TRUE)
+
+# Negative associations: Spumellarida
+grph.neg_df_vert_spum <- filter(grph.neg_df_vert, `taxonomy-5` == "Spumellarida")
+grph.neg_spum_edges <- E(grph.neg)[from(grph.neg_df_vert_spum$name)] 
+grph.neg.spum_subgraph <- subgraph.edges(grph.neg, grph.neg_spum_edges) 
+grph.neg_df_vert %>% 
+  filter(`name` %in% V(grph.neg.spum_subgraph)$name & !`taxonomy-5` %in% c("Spumellarida")) %>%
+  count(`taxonomy-2`,`taxonomy-3`,`taxonomy-4`,`taxonomy-5`, name = "count", sort = TRUE)
+
+
+# Also ckeck out Cariacotrichea to hypothesize about possible symbiosis partners
+# Positive associations only
+grph.pos_df_vert_cari <- filter(grph.pos_df_vert, `taxonomy-4` == "Cariacotrichea")
+grph.pos_cari_edges <- E(grph.pos)[from(grph.pos_df_vert_cari$name)] 
+grph.pos.cari_subgraph <- subgraph.edges(grph.pos, grph.pos_cari_edges) 
+grph.pos_df_vert %>% 
+  filter(`name` %in% V(grph.pos.cari_subgraph)$name & !`taxonomy-4` %in% c("Cariacotrichea"))%>%
+  count(`taxonomy-2`,`taxonomy-3`,`taxonomy-4`,`taxonomy-5`, name = "count", sort = TRUE)
+```
+
+
+
+
+### Analyze node-level measures for keystone-ness
+Calculate 4 parameters for each individual node:
+
+- degree (de) = number of edges connected to the node
+- strength (st) = sum of the weights of all the edges connected to the node
+- betweenness centrality (be) = the number of shortest paths (between all other nodes) that go through the node
+- closeness centrality (cc) = average distance (number of edges) of the node to any other node
+- local clustering coefficient (l.cluster) , aka transitivity = the proportion of two nodes that are connected by a third node, of being connected to each other (eg. how many of a node's "friends" know each other?)
+
+
+```{r}
+# First change the weights of the edges (the strength of association) to absolute value. This won't work if negative edge weights are left with the negative signs
+E(grph.top300)$weight <- abs(E(grph.top300)$weight)
+
+# calculate parameters
+names=V(grph.top300)$name
+de=degree(grph.top300)
+st=graph.strength(grph.top300)
+be=betweenness(grph.top300, normalized=T)
+cc = closeness(grph.top300)
+l.cluster=transitivity(grph.top300, "local")
+
+
+# assemble dataset and match full taxonomy
+fulldateset_node_measures <- data.frame(ID=names, degree=de, strength=st, betweenness=be, closeness = cc, clustering_coefficient = l.cluster) 
+
+# Put back bac taxaonomy
+temp1 <- left_join(fulldateset_node_measures[1:dim(otu_table(ps_bac_pruned_3domains_top100))[1],], bac_taxonomy, by = c("ID" = "#OTU ID")) 
+# delete "Taxonomy-9" and "refined Taxonomy" columns 
+temp1 <- select(temp1, -"taxonomy-9", -"Refined taxonomy")
+
+
+temp2 <- left_join(fulldateset_node_measures[sum(dim(otu_table(ps_bac_pruned_3domains_top100))[1],1):sum(dim(otu_table(ps_bac_pruned_3domains_top100))[1],dim(otu_table(ps_arch_pruned_3domains_top100))[1]),], arch_taxonomy, by = c("ID" = "#OTU ID")) 
+
+
+temp3 <- left_join(fulldateset_node_measures[sum(dim(otu_table(ps_arch_pruned_3domains_top100))[1], dim(otu_table(ps_bac_pruned_3domains_top100))[1],1):sum(dim(otu_table(ps_arch_pruned_3domains_top100))[1], dim(otu_table(ps_bac_pruned_3domains_top100))[1],dim(otu_table(ps_euk_pruned_3domains_top100))[1]),], euk_taxonomy, by = c("ID" = "#ASV ID")) 
+# Rename col names to match those from Bac and Arch
+temp3 <- temp3 %>%
+  rename("taxonomy-1" = Kingdom, "taxonomy-2" = Supergroup, "taxonomy-3" = Division, "taxonomy-4" = Class, "taxonomy-5" = Order, "taxonomy-6" = Family, "taxonomy-7" = Genus, "taxonomy-8" = Species)
+
+# combine back all 3 domains, with new names as row names in a dataframe
+fulldateset_node_measures <- rbind(temp1, temp2, temp3)
+fulldateset_node_measures
+```
+
+Plot betweeness vs degree for each node. 
+- Tipton et al. argue that nodes with high betweenness are "bottlenecks" or important connectors and nodes with high degree are "hubs"
+- Berry et al. argue that nodes with low betweenness, high degree, high closeness, and high transitivity are candidate keystone species
+  - Add in closeness into the node's plotly label since these don't vary much node-to-node and wouldn't make sense to plot
+```{r}
+# replace NA in taxonomy with unidentified 
+# remove nodes with 0 betweenness (can't calculate log10 of 0)
+# replace NaN clustering coefs with 0
+fulldateset_node_measures <- fulldateset_node_measures %>% 
+  replace(is.na(.), "unidentified") %>%
+  filter(!betweenness == 0) 
+
+# get enough colors and randomly rearrange so they are easier to separate on the plot
+mycolors <- colorRampPalette(brewer.pal(12, "Paired"))(length(unique(fulldateset_node_measures$`taxonomy-3`)))
+set.seed(123)
+mycolors <-  sample(mycolors)
+
+# plot with plotly and so I can hover over points and determine which taxa they are
+p <- ggplot(fulldateset_node_measures, aes(x = degree, y = betweenness, ID = ID, shape = `taxonomy-1`, `taxonomy-2` = `taxonomy-2`, color = `taxonomy-3`, `taxonomy-4` = `taxonomy-4`, `taxonomy-5` = `taxonomy-5`)) +
+  geom_point(size = 4) +
+  scale_y_continuous(trans='log10') +
+  scale_color_manual(values = mycolors) +
+  theme(legend.title = element_blank()) +
+  theme_bw()
+p
+ggplotly(p, tooltip = c("ID","taxonomy-2", "taxonomy-3", "taxonomy-4", "taxonomy-5"))
+
+```
+
+Make static figure for manuscript
+```{r}
+
+p2 <- ggplot(fulldateset_node_measures, aes(x = degree, y = betweenness, shape = `taxonomy-1`, color = `taxonomy-3`)) +
+  geom_point(size = 4) +
+  scale_y_continuous(trans='log10') +
+  scale_color_manual(values = mycolors, name = "") +
+  scale_shape_manual(values = c(19,17,15,18), name = "") +
+  theme(legend.title=element_blank(),
+        axis.text = element_text(size=8),
+        axis.text.x = element_text(size=8, angle = 45, hjust = 1),
+        axis.title = element_text(size=8),
+        legend.text = element_text(size=8),
+        strip.text = element_text(size = 8),
+        legend.margin=margin(0,0,0,2),
+        legend.box.margin=margin(-10,-10,-10,-10),
+        plot.margin=grid::unit(c(0,0,0,0), "mm")) +
+  theme_bw() 
+p2
+
+ggsave("figures/betweenness_vs_degree_v2.eps",p2, width = 10, height = 6.5, units = c("in"))
+
+```
+
+
+
+  
+### How many edges does each group have as an aggregate
+```{r}
+# remake `all_temp` matrix with taxonomy from the top 300 tax table
+bac_top100_tax_table <- as.data.frame(tax_table(ps_bac_pruned_3domains_top100)) %>%
+  mutate(name = rownames(tax_table(ps_bac_pruned_3domains_top100)))
+arch_top100_tax_table <- as.data.frame(tax_table(ps_arch_pruned_3domains_top100)) %>%
+  mutate(name = rownames(tax_table(ps_arch_pruned_3domains_top100)))
+euk_top100_tax_table <- as.data.frame(tax_table(ps_euk_pruned_3domains_top100)) %>%
+  mutate(name = rownames(tax_table(ps_euk_pruned_3domains_top100)))
+#link graph data frame to formatted taxonomy tables
+bac_temp <- left_join(grph.top300_df$vertices[1:ntaxa(ps_bac_pruned_3domains_top100),],
+bac_top100_tax_table, by = "name")
+# delete columns that don't match other tax tables
+bac_temp <- select(bac_temp, -"taxonomy-9", -"Refined taxonomy")
+
+arch_temp <- left_join(grph.top300_df$vertices[ntaxa(ps_arch_pruned_3domains_top100)+1:ntaxa(ps_arch_pruned_3domains_top100),],arch_top100_tax_table, by = "name")
+
+euk_temp <- left_join(grph.top300_df$vertices[ntaxa(ps_euk_pruned_3domains_top100)+ntaxa(ps_euk_pruned_3domains_top100)+1:ntaxa(ps_euk_pruned_3domains_top100),], euk_top100_tax_table, by = "name")
+
+# rename column names in euk table to match others
+euk_temp <- euk_temp %>%
+    rename("taxonomy-1" = Kingdom, "taxonomy-2" = Supergroup, "taxonomy-3" = Division, "taxonomy-4" = Class, "taxonomy-5" = Order, "taxonomy-6" = Family, "taxonomy-7" = Genus, "taxonomy-8" = Species)
+
+# build full dataframe with all 3 domains
+all_temp <- rbind(bac_temp, arch_temp, euk_temp)
+
+
+
+
+# extract degree from graph and make into dataframe
+de_df <- as.data.frame(de)
+de_df$name <- rownames(de_df)
+de_df <- left_join(de_df, all_temp, by = "name")
+
+de_df %>%
+  group_by(`taxonomy-1`) %>%
+  summarise(degreesum = sum(de)) %>%
+  arrange(desc(degreesum))
+
+de_df %>%
+  group_by(`taxonomy-2`) %>%
+  summarise(degreesum = sum(de)) %>%
+  arrange(desc(degreesum))
+
+de_df %>%
+  group_by(`taxonomy-3`) %>%
+  summarise(degreesum = sum(de)) %>%
+  arrange(desc(degreesum))
+
+de_df %>%
+  group_by(`taxonomy-4`) %>%
+  summarise(degreesum = sum(de)) %>%
+  arrange(desc(degreesum))
+
+de_df %>%
+  group_by(`taxonomy-5`) %>%
+  summarise(degreesum = sum(de)) %>%
+  arrange(desc(degreesum))
+
+```
+
+
+
+
+## Report some mean abundances
+To include in main text
+```{r}
+mean_division_ra <- left_join(division_df, as_tibble(taxonomy, rownames = "ASV"), by = "ASV") %>%
+  select(-ASV, -Class, -Order, -Family, -Genus, -Species) 
+
+means <- mean_division_ra %>%
+  select(-Kingdom,-Supergroup, -Division) %>%
+  rowwise() %>%
+  summarise('Mean RA' = mean(c_across(everything())))
+
+sterr <- mean_division_ra %>%
+  select(-Kingdom,-Supergroup, -Division) %>%
+  rowwise() %>%
+  summarise('SE' = sd(c_across(everything()))/sqrt(2))
+
+mean_division_ra$'Mean RA' <- means$'Mean RA'
+mean_division_ra$'SE' <- sterr$'SE'
+
+```
+
