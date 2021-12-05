@@ -5096,9 +5096,9 @@ plot(grph.top300.pos,
 mtext ("Positive", side = 3, outer = TRUE, line = -1, adj = 0.22, cex = .8)
 mtext("All depths", side=2, cex = .8, line = 1.5)
 # Panel 2- All depths, negative network
-plot(grph.top300.2domains.neg,
+plot(grph.top300.neg,
      vertex.label=NA,
-     layout=layout_with_graphopt(grph.top300.2domains.neg),
+     layout=layout_with_graphopt(grph.top300.neg),
      vertex.color=domain_color_top300_neg)
 mtext ("Negative", side = 3, outer = TRUE, line = -1, adj = .8, cex = .8)
 # Panel 3- Oxycline, positive network
@@ -5285,6 +5285,291 @@ par(op) # Leave the last plot
 op <- par(usr=c(0,1,0,1), # Reset the coordinates
           xpd=NA)         # Allow plotting outside the plot region
 legend(.15,-0.04, c("Archaea","Bacteria", "Eukarya", "No Blast Hit"), col=c("red", "green", "blue", "grey"), pch = c(16), box.col=NA, cex = .8, horiz = T, x.intersp = c(0.3))
+dev.off()
+
+
+
+```
+
+
+
+
+
+
+
+## Summary network figure with euks color-coded
+Reviewer wants to see important groups in Euks labelled
+
+First remake the color vector to include additional colors for Syndiniales and Polycystinea
+```{r}
+# Top 300, all depths, positive network:
+V(grph.top300.pos)$"taxonomy-1"[which(V(grph.top300.pos)$"taxonomy-4" == "Syndiniales")] <- "Syndiniales"
+V(grph.top300.pos)$"taxonomy-1"[which(V(grph.top300.pos)$"taxonomy-4" == "Polycystinea")] <- "Polycystinea"
+dtype = c("red", "green", "blue", "grey", "purple", "orange") # include "grey" only if there is a node with "No blast hit"
+domain_color_top300_pos_extended <- dtype[as.numeric(as.factor(V(grph.top300.pos)$"taxonomy-1"))]
+
+# Top 300, all depths, negative
+V(grph.top300.neg)$"taxonomy-1"[which(V(grph.top300.neg)$"taxonomy-4" == "Syndiniales")] <- "Syndiniales"
+V(grph.top300.neg)$"taxonomy-1"[which(V(grph.top300.neg)$"taxonomy-4" == "Polycystinea")] <- "Polycystinea"
+dtype = c("red", "green", "blue", "grey", "purple", "orange") # include "grey" only if there is a node with "No blast hit"
+domain_color_top300_neg_extended <- dtype[as.numeric(as.factor(V(grph.top300.neg)$"taxonomy-1"))]
+
+# Top 300, oxycline, positive
+V(grph.top300.oxycline.pos)$"taxonomy-1"[which(V(grph.top300.oxycline.pos)$"taxonomy-4" == "Syndiniales")] <- "Syndiniales"
+V(grph.top300.oxycline.pos)$"taxonomy-1"[which(V(grph.top300.oxycline.pos)$"taxonomy-4" == "Polycystinea")] <- "Polycystinea"
+dtype = c("red", "green", "blue", "purple", "orange") # include "grey" only if there is a node with "No blast hit"
+domain_color_top300_oxy_pos_extended <- dtype[as.numeric(as.factor(V(grph.top300.oxycline.pos)$"taxonomy-1"))]
+
+# Top 300, oxycline, negative
+V(grph.top300.oxycline.neg)$"taxonomy-1"[which(V(grph.top300.oxycline.neg)$"taxonomy-4" == "Syndiniales")] <- "Syndiniales"
+V(grph.top300.oxycline.neg)$"taxonomy-1"[which(V(grph.top300.oxycline.neg)$"taxonomy-4" == "Polycystinea")] <- "Polycystinea"
+dtype = c("red", "green", "blue", "purple", "orange")
+domain_color_top300_oxy_neg_extended <- dtype[as.numeric(as.factor(V(grph.top300.oxycline.neg)$"taxonomy-1"))]
+
+# Top 300, anoxic, positive
+V(grph.top300.anoxic.pos)$"taxonomy-1"[which(V(grph.top300.anoxic.pos)$"taxonomy-4" == "Syndiniales")] <- "Syndiniales"
+V(grph.top300.anoxic.pos)$"taxonomy-1"[which(V(grph.top300.anoxic.pos)$"taxonomy-4" == "Polycystinea")] <- "Polycystinea"
+dtype = c("red", "green", "blue", "grey", "purple", "orange") # include "grey" only if there is a node with "No blast hit"
+domain_color_top300_anoxic_pos_extended <- dtype[as.numeric(as.factor(V(grph.top300.anoxic.pos)$"taxonomy-1"))]
+
+# Top 300, anoxic, negative
+V(grph.top300.anoxic.neg)$"taxonomy-1"[which(V(grph.top300.anoxic.neg)$"taxonomy-4" == "Syndiniales")] <- "Syndiniales"
+V(grph.top300.anoxic.neg)$"taxonomy-1"[which(V(grph.top300.anoxic.neg)$"taxonomy-4" == "Polycystinea")] <- "Polycystinea"
+dtype = c("red", "green", "blue", "purple", "orange") # include "grey" only if there is a node with "No blast hit"
+domain_color_top300_anoxic_neg_extended <- dtype[as.numeric(as.factor(V(grph.top300.anoxic.neg)$"taxonomy-1"))]
+
+# Skip 2 domain no networks (no euks!)
+
+# Top 300, nonparasites, positive (should not have Syndiniales)
+V(grph.top300.nonparasites.pos)$"taxonomy-1"[which(V(grph.top300.nonparasites.pos)$"taxonomy-4" == "Syndiniales")] <- "Syndiniales"
+V(grph.top300.nonparasites.pos)$"taxonomy-1"[which(V(grph.top300.nonparasites.pos)$"taxonomy-4" == "Polycystinea")] <- "Polycystinea"
+dtype = c("red", "green", "blue", "grey", "purple") # remove orange for Syndiniales
+domain_color_top300_nonparasites_pos_extended <- dtype[as.numeric(as.factor(V(grph.top300.nonparasites.pos)$"taxonomy-1"))]
+
+# Top 300, nonparasites, negative
+V(grph.top300.nonparasites.neg)$"taxonomy-1"[which(V(grph.top300.nonparasites.neg)$"taxonomy-4" == "Syndiniales")] <- "Syndiniales"
+V(grph.top300.nonparasites.neg)$"taxonomy-1"[which(V(grph.top300.nonparasites.neg)$"taxonomy-4" == "Polycystinea")] <- "Polycystinea"
+dtype = c("red", "green", "blue", "grey", "purple") # remove orange for Syndiniales
+domain_color_top300_nonparasites_neg_extended <- dtype[as.numeric(as.factor(V(grph.top300.nonparasites.neg)$"taxonomy-1"))]
+
+# Top 300, parasites, positive (should not have Polycystinea)
+V(grph.top300.parasites.pos)$"taxonomy-1"[which(V(grph.top300.parasites.pos)$"taxonomy-4" == "Syndiniales")] <- "Syndiniales"
+V(grph.top300.parasites.pos)$"taxonomy-1"[which(V(grph.top300.parasites.pos)$"taxonomy-4" == "Polycystinea")] <- "Polycystinea"
+dtype = c("red", "green", "blue", "grey", "orange") # remove orange for Polycystinea
+domain_color_top300_parasites_pos_extended <- dtype[as.numeric(as.factor(V(grph.top300.parasites.pos)$"taxonomy-1"))]
+
+# Top 300, parasites, negative
+V(grph.top300.parasites.neg)$"taxonomy-1"[which(V(grph.top300.parasites.neg)$"taxonomy-4" == "Syndiniales")] <- "Syndiniales"
+V(grph.top300.parasites.neg)$"taxonomy-1"[which(V(grph.top300.parasites.neg)$"taxonomy-4" == "Polycystinea")] <- "Polycystinea"
+dtype = c("red", "green", "blue", "grey", "orange") # remove orange for Polycystinea
+domain_color_top300_parasites_neg_extended <- dtype[as.numeric(as.factor(V(grph.top300.parasites.neg)$"taxonomy-1"))]
+```
+
+
+Replot, first- All depths, oxycline, anoxic networks:
+```{r}
+# Set up in panels
+op <- par(oma=c(2,.5,.5,0),# Room for the titles and legend
+  mfrow=c(3,2),
+  mai=c(.15,.3,.15,.1))
+# Panel 1- All depths, positive network
+plot(grph.top300.pos,
+     vertex.label=NA,
+     layout=layout_with_graphopt(grph.top300.pos),
+     vertex.color=domain_color_top300_pos_extended)
+mtext ("Positive", side = 3, outer = TRUE, line = -1, adj = 0.22, cex = .8)
+mtext("All depths", side=2, cex = .8, line = 1.5)
+# Panel 2- All depths, negative network
+plot(grph.top300.neg,
+     vertex.label=NA,
+     layout=layout_with_graphopt(grph.top300.neg),
+     vertex.color=domain_color_top300_neg_extended)
+mtext ("Negative", side = 3, outer = TRUE, line = -1, adj = .8, cex = .8)
+# Panel 3- Oxycline, positive network
+plot(grph.top300.oxycline.pos,
+     vertex.label=NA,
+     layout=layout_with_graphopt(grph.top300.oxycline.pos),
+     vertex.color=domain_color_top300_oxy_pos_extended)
+mtext("Oxycline", side=2, cex = .8, line = 1.5)
+# Panel 4- Oxycline, negative network
+plot(grph.top300.oxycline.neg,
+     vertex.label=NA,
+     layout=layout_with_graphopt(grph.top300.oxycline.neg),
+     vertex.color=domain_color_top300_oxy_neg_extended)
+# Panel 5- Anoxic, positive network
+plot(grph.top300.anoxic.pos,
+     vertex.label=NA,
+     layout=layout_with_graphopt(grph.top300.anoxic.pos),
+     vertex.color=domain_color_top300_anoxic_pos_extended)
+mtext("Anoxic", side=2, cex = .8, line = 1.5)
+# Panel 6- Anoxic, negative network
+plot(grph.top300.anoxic.neg,
+     vertex.label=NA,
+     layout=layout_with_graphopt(grph.top300.anoxic.neg),
+     vertex.color=domain_color_top300_anoxic_neg_extended)
+# Add legend
+par(op) # Leave the last plot
+op <- par(usr=c(0,1,0,1), # Reset the coordinates
+          xpd=NA)         # Allow plotting outside the plot region
+legend(.01,-0.04, c("Archaea","Bacteria", "Syndiniales", "Polycystinea","Other Eukarya", "No Blast Hit"), col=c("red", "green", "orange","purple", "blue","grey"), pch = c(16), box.col=NA, cex = .6, horiz = T, x.intersp = c(0.3))
+
+
+# Save figure
+# Set up EPS and make plot
+setEPS(width = 6, height = 7)
+postscript("Figures/Networks_pos_neg_all_oxycline_anox_Dec21_Synd_Polycys.eps")
+# Set up in panels
+op <- par(oma=c(2,.5,.5,0),# Room for the titles and legend
+  mfrow=c(3,2),
+  mai=c(.15,.3,.15,.1))
+# Panel 1- All depths, positive network
+plot(grph.top300.pos,
+     vertex.label=NA,
+     layout=layout_with_graphopt(grph.top300.pos),
+     vertex.color=domain_color_top300_pos_extended)
+mtext ("Positive", side = 3, outer = TRUE, line = -1, adj = 0.22, cex = .8)
+mtext("All depths", side=2, cex = .8, line = 1.5)
+# Panel 2- All depths, negative network
+plot(grph.top300.neg,
+     vertex.label=NA,
+     layout=layout_with_graphopt(grph.top300.neg),
+     vertex.color=domain_color_top300_neg_extended)
+mtext ("Negative", side = 3, outer = TRUE, line = -1, adj = .8, cex = .8)
+# Panel 3- Oxycline, positive network
+plot(grph.top300.oxycline.pos,
+     vertex.label=NA,
+     layout=layout_with_graphopt(grph.top300.oxycline.pos),
+     vertex.color=domain_color_top300_oxy_pos_extended)
+mtext("Oxycline", side=2, cex = .8, line = 1.5)
+# Panel 4- Oxycline, negative network
+plot(grph.top300.oxycline.neg,
+     vertex.label=NA,
+     layout=layout_with_graphopt(grph.top300.oxycline.neg),
+     vertex.color=domain_color_top300_oxy_neg_extended)
+# Panel 5- Anoxic, positive network
+plot(grph.top300.anoxic.pos,
+     vertex.label=NA,
+     layout=layout_with_graphopt(grph.top300.anoxic.pos),
+     vertex.color=domain_color_top300_anoxic_pos_extended)
+mtext("Anoxic", side=2, cex = .8, line = 1.5)
+# Panel 6- Anoxic, negative network
+plot(grph.top300.anoxic.neg,
+     vertex.label=NA,
+     layout=layout_with_graphopt(grph.top300.anoxic.neg),
+     vertex.color=domain_color_top300_anoxic_neg_extended)
+# Add legend
+par(op) # Leave the last plot
+op <- par(usr=c(0,1,0,1), # Reset the coordinates
+          xpd=NA)         # Allow plotting outside the plot region
+legend(.01,-0.04, c("Archaea","Bacteria", "Syndiniales", "Polycystinea","Other Eukarya", "No Blast Hit"), col=c("red", "green", "orange","purple", "blue","grey"), pch = c(16), box.col=NA, cex = .6, horiz = T, x.intersp = c(0.3))
+dev.off()
+
+
+
+```
+
+
+
+
+
+
+Second- No euks, no parasites, no nonparasites
+```{r}
+# Set up in panels
+op <- par(oma=c(2,.5,.5,0),# Room for the titles and legend
+  mfrow=c(3,2),
+  mai=c(.15,.3,.15,.1))
+# Panel 1- Euks removed, positive network
+plot(grph.top300.2domains.pos,
+     vertex.label=NA,
+     layout=layout_with_graphopt(grph.top300.2domains.pos),
+     vertex.color=domain_color_2domains_top300_pos)
+mtext ("Positive", side = 3, outer = TRUE, line = -1, adj = 0.22, cex = .8)
+mtext("Eukaryotes removed", side=2, cex = .8, line = 1.5)
+# Panel 2- Euks, negative network
+plot(grph.top300.2domains.neg,
+     vertex.label=NA,
+     layout=layout_with_graphopt(grph.top300.2domains.neg),
+     vertex.color=domain_color_2domains_top300_neg)
+mtext ("Negative", side = 3, outer = TRUE, line = -1, adj = .8, cex = .8)
+# Panel 3- Parasites removed, positive network
+plot(grph.top300.nonparasites.pos,
+     vertex.label=NA,
+     layout=layout_with_graphopt(grph.top300.nonparasites.pos),
+     vertex.color=domain_color_top300_nonparasites_pos_extended)
+mtext("Parasites Removed", side=2, cex = .8, line = 1.5)
+# Panel 4- Parasites removed, negative network
+plot(grph.top300.nonparasites.neg,
+     vertex.label=NA,
+     layout=layout_with_graphopt(grph.top300.nonparasites.neg),
+     vertex.color=domain_color_top300_nonparasites_neg_extended)
+# Panel 5- Nonparasites removed, positive network
+plot(grph.top300.parasites.pos,
+     vertex.label=NA,
+     layout=layout_with_graphopt(grph.top300.parasites.pos),
+     vertex.color=domain_color_top300_parasites_pos_extended)
+mtext("Nonparasites Removed", side=2, cex = .8, line = 1.5)
+# Panel 6- Nonparasites removed, negative network
+plot(grph.top300.parasites.neg,
+     vertex.label=NA,
+     layout=layout_with_graphopt(grph.top300.parasites.neg),
+     vertex.color=domain_color_top300_parasites_neg_extended)
+# Add legend
+par(op) # Leave the last plot
+op <- par(usr=c(0,1,0,1), # Reset the coordinates
+          xpd=NA)         # Allow plotting outside the plot region
+legend(.01,-0.04, c("Archaea","Bacteria", "Syndiniales", "Polycystinea","Other Eukarya", "No Blast Hit"), col=c("red", "green", "orange","purple", "blue","grey"), pch = c(16), box.col=NA, cex = .6, horiz = T, x.intersp = c(0.3))
+
+
+
+# Save figure
+# Set up EPS and make plot
+setEPS(width = 6, height = 7)
+postscript("Figures/Networks_pos_neg_noeuks_noparasites_nononparasites_Synd_Polycyst_Dec21.eps")
+# Set up in panels
+op <- par(oma=c(2,.5,.5,0),# Room for the titles and legend
+  mfrow=c(3,2),
+  mai=c(.15,.3,.15,.1))
+# Panel 1- Euks removed, positive network
+plot(grph.top300.2domains.pos,
+     vertex.label=NA,
+     layout=layout_with_graphopt(grph.top300.2domains.pos),
+     vertex.color=domain_color_2domains_top300_pos)
+mtext ("Positive", side = 3, outer = TRUE, line = -1, adj = 0.22, cex = .8)
+mtext("Eukaryotes removed", side=2, cex = .8, line = 1.5)
+# Panel 2- Euks, negative network
+plot(grph.top300.2domains.neg,
+     vertex.label=NA,
+     layout=layout_with_graphopt(grph.top300.2domains.neg),
+     vertex.color=domain_color_2domains_top300_neg)
+mtext ("Negative", side = 3, outer = TRUE, line = -1, adj = .8, cex = .8)
+# Panel 3- Parasites removed, positive network
+plot(grph.top300.nonparasites.pos,
+     vertex.label=NA,
+     layout=layout_with_graphopt(grph.top300.nonparasites.pos),
+     vertex.color=domain_color_top300_nonparasites_pos_extended)
+mtext("Parasites Removed", side=2, cex = .8, line = 1.5)
+# Panel 4- Parasites removed, negative network
+plot(grph.top300.nonparasites.neg,
+     vertex.label=NA,
+     layout=layout_with_graphopt(grph.top300.nonparasites.neg),
+     vertex.color=domain_color_top300_nonparasites_neg_extended)
+# Panel 5- Nonparasites removed, positive network
+plot(grph.top300.parasites.pos,
+     vertex.label=NA,
+     layout=layout_with_graphopt(grph.top300.parasites.pos),
+     vertex.color=domain_color_top300_parasites_pos_extended)
+mtext("Nonparasites Removed", side=2, cex = .8, line = 1.5)
+# Panel 6- Nonparasites removed, negative network
+plot(grph.top300.parasites.neg,
+     vertex.label=NA,
+     layout=layout_with_graphopt(grph.top300.parasites.neg),
+     vertex.color=domain_color_top300_parasites_neg_extended)
+# Add legend
+par(op) # Leave the last plot
+op <- par(usr=c(0,1,0,1), # Reset the coordinates
+          xpd=NA)         # Allow plotting outside the plot region
+legend(.01,-0.04, c("Archaea","Bacteria", "Syndiniales", "Polycystinea","Other Eukarya", "No Blast Hit"), col=c("red", "green", "orange","purple", "blue","grey"), pch = c(16), box.col=NA, cex = .6, horiz = T, x.intersp = c(0.3))
 dev.off()
 
 
