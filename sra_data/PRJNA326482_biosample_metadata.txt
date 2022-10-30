@@ -1,0 +1,181 @@
+seawater	Nov-2014	Venezuela: Cariaco Basin	10.617 N 65.167 W	Niskin bottle	267	0.2-2.7µm	b
+seawater	Nov-2014	Venezuela: Cariaco Basin	10.617 N 65.167 W	Niskin bottle	267	0.2-2.7µm	a
+seawater	Nov-2014	Venezuela: Cariaco Basin	10.617 N 65.167 W	Niskin bottle	247	0.2-2.7µm	b
+seawater	Nov-2014	Venezuela: Cariaco Basin	10.617 N 65.167 W	Niskin bottle	247	0.2-2.7µm	a
+seawater	Nov-2014	Venezuela: Cariaco Basin	10.617 N 65.167 W	Niskin bottle	237	0.2-2.7µm	b
+seawater	Nov-2014	Venezuela: Cariaco Basin	10.617 N 65.167 W	Niskin bottle	237	0.2-2.7µm	a
+seawater	Nov-2014	Venezuela: Cariaco Basin	10.617 N 65.167 W	Niskin bottle	200	0.2-2.7µm	b
+seawater	Nov-2014	Venezuela: Cariaco Basin	10.617 N 65.167 W	Niskin bottle	200	0.2-2.7µm	a
+seawater	Nov-2014	Venezuela: Cariaco Basin	10.617 N 65.167 W	Niskin bottle	143	0.2-2.7µm	b
+seawater	Nov-2014	Venezuela: Cariaco Basin	10.617 N 65.167 W	Niskin bottle	143	0.2-2.7µm	a
+seawater	Nov-2014	Venezuela: Cariaco Basin	10.617 N 65.167 W	Niskin bottle	267	>2.7µm	b
+seawater	Nov-2014	Venezuela: Cariaco Basin	10.617 N 65.167 W	Niskin bottle	267	>2.7µm	a
+seawater	Nov-2014	Venezuela: Cariaco Basin	10.617 N 65.167 W	Niskin bottle	247	>2.7µm	b
+seawater	Nov-2014	Venezuela: Cariaco Basin	10.617 N 65.167 W	Niskin bottle	247	>2.7µm	a
+seawater	Nov-2014	Venezuela: Cariaco Basin	10.617 N 65.167 W	Niskin bottle	237	>2.7µm	b
+seawater	Nov-2014	Venezuela: Cariaco Basin	10.617 N 65.167 W	Niskin bottle	237	>2.7µm	a
+seawater	Nov-2014	Venezuela: Cariaco Basin	10.617 N 65.167 W	Niskin bottle	200	>2.7µm	b
+seawater	Nov-2014	Venezuela: Cariaco Basin	10.617 N 65.167 W	Niskin bottle	200	>2.7µm	a
+seawater	Nov-2014	Venezuela: Cariaco Basin	10.617 N 65.167 W	Niskin bottle	143	>2.7µm	b
+seawater	Nov-2014	Venezuela: Cariaco Basin	10.617 N 65.167 W	Niskin bottle	143	>2.7µm	a
+seawater	May-2014	Venezuela: Cariaco Basin	10.617 N 65.167 W	Niskin bottle	314	0.2-2.7µm	b
+seawater	May-2014	Venezuela: Cariaco Basin	10.617 N 65.167 W	Niskin bottle	314	0.2-2.7µm	a
+seawater	May-2014	Venezuela: Cariaco Basin	10.617 N 65.167 W	Niskin bottle	295	0.2-2.7µm	b
+seawater	May-2014	Venezuela: Cariaco Basin	10.617 N 65.167 W	Niskin bottle	295	0.2-2.7µm	a
+seawater	May-2014	Venezuela: Cariaco Basin	10.617 N 65.167 W	Niskin bottle	234	0.2-2.7µm	b
+seawater	May-2014	Venezuela: Cariaco Basin	10.617 N 65.167 W	Niskin bottle	234	0.2-2.7µm	a
+seawater	May-2014	Venezuela: Cariaco Basin	10.617 N 65.167 W	Niskin bottle	198	0.2-2.7µm	b
+seawater	May-2014	Venezuela: Cariaco Basin	10.617 N 65.167 W	Niskin bottle	198	0.2-2.7µm	a
+seawater	May-2014	Venezuela: Cariaco Basin	10.617 N 65.167 W	Niskin bottle	103	0.2-2.7µm	b
+seawater	May-2014	Venezuela: Cariaco Basin	10.617 N 65.167 W	Niskin bottle	103	0.2-2.7µm	a
+seawater	May-2014	Venezuela: Cariaco Basin	10.617 N 65.167 W	Niskin bottle	314	>2.7µm	b
+seawater	May-2014	Venezuela: Cariaco Basin	10.617 N 65.167 W	Niskin bottle	314	>2.7µm	a
+seawater	May-2014	Venezuela: Cariaco Basin	10.617 N 65.167 W	Niskin bottle	295	>2.7µm	b
+seawater	May-2014	Venezuela: Cariaco Basin	10.617 N 65.167 W	Niskin bottle	295	>2.7µm	a
+seawater	May-2014	Venezuela: Cariaco Basin	10.617 N 65.167 W	Niskin bottle	234	>2.7µm	b
+seawater	May-2014	Venezuela: Cariaco Basin	10.617 N 65.167 W	Niskin bottle	234	>2.7µm	a
+seawater	May-2014	Venezuela: Cariaco Basin	10.617 N 65.167 W	Niskin bottle	198	>2.7µm	b
+seawater	May-2014	Venezuela: Cariaco Basin	10.617 N 65.167 W	Niskin bottle	198	>2.7µm	a
+seawater	May-2014	Venezuela: Cariaco Basin	10.617 N 65.167 W	Niskin bottle	103	>2.7µm	b
+seawater	May-2014	Venezuela: Cariaco Basin	10.617 N 65.167 W	Niskin bottle
+seawater	Nov-2014	Venezuela: Cariaco Basin	10.617 N 65.167 W	Deep Anoxic, Sulfidic	Niskin bottle	0.00	900	0.2-2.7µm	b	17.11	36.26	119.98	0.00	0.00	10.83
+seawater	Nov-2014	Venezuela: Cariaco Basin	10.617 N 65.167 W	Deep Anoxic, Sulfidic	Niskin bottle	0.00	900	0.2-2.7µm	a	17.11	36.26	119.98	0.00	0.00	10.83
+seawater	Nov-2014	Venezuela: Cariaco Basin	10.617 N 65.167 W	Shallow Anoxic	Niskin bottle	0.00	267	0.2-2.7µm	b	17.76	36.38	0.00	0.13	0.01	0.18
+seawater	Nov-2014	Venezuela: Cariaco Basin	10.617 N 65.167 W	Shallow Anoxic	Niskin bottle	0.00	267	0.2-2.7µm	a	17.76	36.38	0.00	0.13	0.01	0.18
+seawater	Nov-2014	Venezuela: Cariaco Basin	10.617 N 65.167 W	Oxic-Anoxic Interface	Niskin bottle	0.00	247	0.2-2.7µm	b	17.83	36.39	0.00	0.03	0.01	0.01
+seawater	Nov-2014	Venezuela: Cariaco Basin	10.617 N 65.167 W	Oxic-Anoxic Interface	Niskin bottle	0.00	247	0.2-2.7µm	a	17.83	36.39	0.00	0.03	0.01	0.01
+seawater	Nov-2014	Venezuela: Cariaco Basin	10.617 N 65.167 W	Suboxic	Niskin bottle	0.41	237	0.2-2.7µm	b	17.88	36.40	0.00	0.03	0.02	0.01
+seawater	Nov-2014	Venezuela: Cariaco Basin	10.617 N 65.167 W	Suboxic	Niskin bottle	0.41	237	0.2-2.7µm	a	17.88	36.40	0.00	0.03	0.02	0.01
+seawater	Nov-2014	Venezuela: Cariaco Basin	10.617 N 65.167 W	Micro-oxic	Niskin bottle	14.07	200	0.2-2.7µm	b	18.09	36.43	0.00	0.00	0.00	0.01
+seawater	Nov-2014	Venezuela: Cariaco Basin	10.617 N 65.167 W	Micro-oxic	Niskin bottle	14.07	200	0.2-2.7µm	a	18.09	36.43	0.00	0.00	0.00	0.01
+seawater	Nov-2014	Venezuela: Cariaco Basin	10.617 N 65.167 W	Oxic	Niskin bottle	82.02	143	0.2-2.7µm	b	19.40	36.61	0.00	0.00	0.00	0.02
+seawater	Nov-2014	Venezuela: Cariaco Basin	10.617 N 65.167 W	Oxic	Niskin bottle	82.02	143	0.2-2.7µm	a	19.40	36.61	0.00	0.00	0.00	0.02
+seawater	Nov-2014	Venezuela: Cariaco Basin	10.617 N 65.167 W	Deep Anoxic, Sulfidic	Niskin bottle	0.00	900	>2.7µm	b	17.11	36.26	119.98	0.00	0.00	10.83
+seawater	Nov-2014	Venezuela: Cariaco Basin	10.617 N 65.167 W	Deep Anoxic, Sulfidic	Niskin bottle	0.00	900	>2.7µm	a	17.11	36.26	119.98	0.00	0.00	10.83
+seawater	Nov-2014	Venezuela: Cariaco Basin	10.617 N 65.167 W	Shallow Anoxic	Niskin bottle	0.00	267	>2.7µm	b	17.76	36.38	0.00	0.13	0.01	0.18
+seawater	Nov-2014	Venezuela: Cariaco Basin	10.617 N 65.167 W	Shallow Anoxic	Niskin bottle	0.00	267	>2.7µm	a	17.76	36.38	0.00	0.13	0.01	0.18
+seawater	Nov-2014	Venezuela: Cariaco Basin	10.617 N 65.167 W	Oxic-Anoxic Interface	Niskin bottle	0.00	247	>2.7µm	b	17.83	36.39	0.00	0.03	0.01	0.01
+seawater	Nov-2014	Venezuela: Cariaco Basin	10.617 N 65.167 W	Oxic-Anoxic Interface	Niskin bottle	0.00	247	>2.7µm	a	17.83	36.39	0.00	0.03	0.01	0.01
+seawater	Nov-2014	Venezuela: Cariaco Basin	10.617 N 65.167 W	Suboxic	Niskin bottle	0.41	237	>2.7µm	b	17.88	36.40	0.00	0.03	0.02	0.01
+seawater	Nov-2014	Venezuela: Cariaco Basin	10.617 N 65.167 W	Suboxic	Niskin bottle	0.41	237	>2.7µm	a	17.88	36.40	0.00	0.03	0.02	0.01
+seawater	Nov-2014	Venezuela: Cariaco Basin	10.617 N 65.167 W	Micro-oxic	Niskin bottle	14.07	200	>2.7µm	b	18.09	36.43	0.00	0.00	0	0.01
+seawater	Nov-2014	Venezuela: Cariaco Basin	10.617 N 65.167 W	Micro-oxic	Niskin bottle	14.07	200	>2.7µm	a	18.09	36.43	0.00	0.00	0	0.01
+seawater	Nov-2014	Venezuela: Cariaco Basin	10.617 N 65.167 W	Oxic	Niskin bottle	82.02	143	>2.7µm	b	19.40	36.61	0.00	0.00	0	0.02
+seawater	Nov-2014	Venezuela: Cariaco Basin	10.617 N 65.167 W	Oxic	Niskin bottle	82.02	143	>2.7µm	a	19.40	36.61	0.00	0.00	0	0.02
+seawater	May-2014	Venezuela: Cariaco Basin	10.617 N 65.167 W	Deep Anoxic, Sulfidic	Niskin bottle	0.0	900	0.2-2.7µm	b	17.1	36.3	70.33	0.00	0.00	12.42
+seawater	May-2014	Venezuela: Cariaco Basin	10.617 N 65.167 W	Deep Anoxic, Sulfidic	Niskin bottle	0.0	900	0.2-2.7µm	a	17.1	36.3	70.33	0.00	0.00	12.42
+seawater	May-2014	Venezuela: Cariaco Basin	10.617 N 65.167 W	Shallow Anoxic	Niskin bottle	0.0	314	0.2-2.7µm	b	17.6	36.4	6.76	0.46	0.20	1.75
+seawater	May-2014	Venezuela: Cariaco Basin	10.617 N 65.167 W	Shallow Anoxic	Niskin bottle	0.0	314	0.2-2.7µm	a	17.6	36.4	6.76	0.46	0.20	1.75
+seawater	May-2014	Venezuela: Cariaco Basin	10.617 N 65.167 W	Oxic-Anoxic Interface	Niskin bottle	0.0	295	0.2-2.7µm	b	17.7	36.4	0	0.14	0.22	0.81
+seawater	May-2014	Venezuela: Cariaco Basin	10.617 N 65.167 W	Oxic-Anoxic Interface	Niskin bottle	0.0	295	0.2-2.7µm	a	17.7	36.4	0	0.14	0.22	0.81
+seawater	May-2014	Venezuela: Cariaco Basin	10.617 N 65.167 W	Suboxic	Niskin bottle	12.0	234	0.2-2.7µm	b	17.9	36.4	0	0.03	0.02	0.08
+seawater	May-2014	Venezuela: Cariaco Basin	10.617 N 65.167 W	Suboxic	Niskin bottle	12.0	234	0.2-2.7µm	a	17.9	36.4	0	0.03	0.02	0.08
+seawater	May-2014	Venezuela: Cariaco Basin	10.617 N 65.167 W	Micro-oxic	Niskin bottle	31.9	198	0.2-2.7µm	b	18.1	36.4	0	0.00	0.00	0.02
+seawater	May-2014	Venezuela: Cariaco Basin	10.617 N 65.167 W	Micro-oxic	Niskin bottle	31.9	198	0.2-2.7µm	a	18.1	36.4	0	0.00	0.00	0.02
+seawater	May-2014	Venezuela: Cariaco Basin	10.617 N 65.167 W	Oxic	Niskin bottle	122.9	103	0.2-2.7µm	b	19.7	36.7	0	0.00	0.00	0.02
+seawater	May-2014	Venezuela: Cariaco Basin	10.617 N 65.167 W	Oxic	Niskin bottle	122.9	103	0.2-2.7µm	a	19.7	36.7	0	0.00	0.00	0.02
+seawater	May-2014	Venezuela: Cariaco Basin	10.617 N 65.167 W	Deep Anoxic, Sulfidic	Niskin bottle	0.0	900	>2.7µm	b	17.1	36.3	70.33	0.00	0.00	12.42
+seawater	May-2014	Venezuela: Cariaco Basin	10.617 N 65.167 W	Deep Anoxic, Sulfidic	Niskin bottle	0.0	900	>2.7µm	a	17.1	36.3	70.33	0.00	0.00	12.42
+seawater	May-2014	Venezuela: Cariaco Basin	10.617 N 65.167 W	Shallow Anoxic	Niskin bottle	0.0	314	>2.7µm	b	17.6	36.4	6.76	0.46	0.20	1.75
+seawater	May-2014	Venezuela: Cariaco Basin	10.617 N 65.167 W	Shallow Anoxic	Niskin bottle	0.0	314	>2.7µm	a	17.6	36.4	6.76	0.46	0.20	1.75
+seawater	May-2014	Venezuela: Cariaco Basin	10.617 N 65.167 W	Oxic-Anoxic Interface	Niskin bottle	0.0	295	>2.7µm	b	17.7	36.4	0	0.14	0.22	0.81
+seawater	May-2014	Venezuela: Cariaco Basin	10.617 N 65.167 W	Oxic-Anoxic Interface	Niskin bottle	0.0	295	>2.7µm	a	17.7	36.4	0	0.14	0.22	0.81
+seawater	May-2014	Venezuela: Cariaco Basin	10.617 N 65.167 W	Suboxic	Niskin bottle	12.0	234	>2.7µm	b	17.9	36.4	0	0.03	0.02	0.08
+seawater	May-2014	Venezuela: Cariaco Basin	10.617 N 65.167 W	Suboxic	Niskin bottle	12.0	234	>2.7µm	a	17.9	36.4	0	0.03	0.02	0.08
+seawater	May-2014	Venezuela: Cariaco Basin	10.617 N 65.167 W	Micro-oxic	Niskin bottle	31.9	198	>2.7µm	b	18.1	36.4	0	0.00	0.00	0.02
+seawater	May-2014	Venezuela: Cariaco Basin	10.617 N 65.167 W	Oxic	Niskin bottle	122.9	103	>2.7µm	b	19.7	36.7	0	0.00	0.00	0.02
+seawater	May-2014	Venezuela: Cariaco Basin	10.617 N 65.167 W	Oxic	Niskin bottle	122.9	103	>2.7µm	a	19.7	36.7	0	0.00	0.00	0.02
+seawater	Nov-2014	Venezuela: Cariaco Basin	10.617 N 65.167 W	Deep Anoxic, Sulfidic	Niskin bottle	0.00	900	0.2-2.7µm	b	17.11	36.26	119.98	0.00	0.00	10.83
+seawater	Nov-2014	Venezuela: Cariaco Basin	10.617 N 65.167 W	Deep Anoxic, Sulfidic	Niskin bottle	0.00	900	0.2-2.7µm	a	17.11	36.26	119.98	0.00	0.00	10.83
+seawater	Nov-2014	Venezuela: Cariaco Basin	10.617 N 65.167 W	Shallow Anoxic	Niskin bottle	0.00	267	0.2-2.7µm	b	17.76	36.38	0.00	0.13	0.01	0.18
+seawater	Nov-2014	Venezuela: Cariaco Basin	10.617 N 65.167 W	Shallow Anoxic	Niskin bottle	0.00	267	0.2-2.7µm	a	17.76	36.38	0.00	0.13	0.01	0.18
+seawater	Nov-2014	Venezuela: Cariaco Basin	10.617 N 65.167 W	Oxic-Anoxic Interface	Niskin bottle	0.00	247	0.2-2.7µm	b	17.83	36.39	0.00	0.03	0.01	0.01
+seawater	Nov-2014	Venezuela: Cariaco Basin	10.617 N 65.167 W	Oxic-Anoxic Interface	Niskin bottle	0.00	247	0.2-2.7µm	a	17.83	36.39	0.00	0.03	0.01	0.01
+seawater	Nov-2014	Venezuela: Cariaco Basin	10.617 N 65.167 W	Suboxic	Niskin bottle	0.41	237	0.2-2.7µm	b	17.88	36.40	0.00	0.03	0.02	0.01
+seawater	Nov-2014	Venezuela: Cariaco Basin	10.617 N 65.167 W	Suboxic	Niskin bottle	0.41	237	0.2-2.7µm	a	17.88	36.40	0.00	0.03	0.02	0.01
+seawater	Nov-2014	Venezuela: Cariaco Basin	10.617 N 65.167 W	Micro-oxic	Niskin bottle	14.07	200	0.2-2.7µm	b	18.09	36.43	0.00	0.00	0.00	0.01
+seawater	Nov-2014	Venezuela: Cariaco Basin	10.617 N 65.167 W	Micro-oxic	Niskin bottle	14.07	200	0.2-2.7µm	a	18.09	36.43	0.00	0.00	0.00	0.01
+seawater	Nov-2014	Venezuela: Cariaco Basin	10.617 N 65.167 W	Oxic	Niskin bottle	82.02	143	0.2-2.7µm	b	19.40	36.61	0.00	0.00	0.00	0.02
+seawater	Nov-2014	Venezuela: Cariaco Basin	10.617 N 65.167 W	Oxic	Niskin bottle	82.02	143	0.2-2.7µm	a	19.40	36.61	0.00	0.00	0.00	0.02
+seawater	Nov-2014	Venezuela: Cariaco Basin	10.617 N 65.167 W	Deep Anoxic, Sulfidic	Niskin bottle	0.00	900	>2.7µm	b	17.11	36.26	119.98	0.00	0.00	10.83
+seawater	Nov-2014	Venezuela: Cariaco Basin	10.617 N 65.167 W	Deep Anoxic, Sulfidic	Niskin bottle	0.00	900	>2.7µm	a	17.11	36.26	119.98	0.00	0.00	10.83
+seawater	Nov-2014	Venezuela: Cariaco Basin	10.617 N 65.167 W	Shallow Anoxic	Niskin bottle	0.00	267	>2.7µm	b	17.76	36.38	0.00	0.13	0.01	0.18
+seawater	Nov-2014	Venezuela: Cariaco Basin	10.617 N 65.167 W	Shallow Anoxic	Niskin bottle	0.00	267	>2.7µm	a	17.76	36.38	0.00	0.13	0.01	0.18
+seawater	Nov-2014	Venezuela: Cariaco Basin	10.617 N 65.167 W	Oxic-Anoxic Interface	Niskin bottle	0.00	247	>2.7µm	b	17.83	36.39	0.00	0.03	0.01	0.01
+seawater	Nov-2014	Venezuela: Cariaco Basin	10.617 N 65.167 W	Oxic-Anoxic Interface	Niskin bottle	0.00	247	>2.7µm	a	17.83	36.39	0.00	0.03	0.01	0.01
+seawater	Nov-2014	Venezuela: Cariaco Basin	10.617 N 65.167 W	Suboxic	Niskin bottle	0.41	237	>2.7µm	b	17.88	36.40	0.00	0.03	0.02	0.01
+seawater	Nov-2014	Venezuela: Cariaco Basin	10.617 N 65.167 W	Suboxic	Niskin bottle	0.41	237	>2.7µm	a	17.88	36.40	0.00	0.03	0.02	0.01
+seawater	Nov-2014	Venezuela: Cariaco Basin	10.617 N 65.167 W	Micro-oxic	Niskin bottle	14.07	200	>2.7µm	b	18.09	36.43	0.00	0.00	0	0.01
+seawater	Nov-2014	Venezuela: Cariaco Basin	10.617 N 65.167 W	Micro-oxic	Niskin bottle	14.07	200	>2.7µm	a	18.09	36.43	0.00	0.00	0	0.01
+seawater	Nov-2014	Venezuela: Cariaco Basin	10.617 N 65.167 W	Oxic	Niskin bottle	82.02	143	>2.7µm	b	19.40	36.61	0.00	0.00	0	0.02
+seawater	Nov-2014	Venezuela: Cariaco Basin	10.617 N 65.167 W	Oxic	Niskin bottle	82.02	143	>2.7µm	a	19.40	36.61	0.00	0.00	0	0.02
+seawater	May-2014	Venezuela: Cariaco Basin	10.617 N 65.167 W	Deep Anoxic, Sulfidic	Niskin bottle	0.0	900	0.2-2.7µm	b	17.1	36.3	70.33	0.00	0.00	12.42
+seawater	May-2014	Venezuela: Cariaco Basin	10.617 N 65.167 W	Deep Anoxic, Sulfidic	Niskin bottle	0.0	900	0.2-2.7µm	a	17.1	36.3	70.33	0.00	0.00	12.42
+seawater	May-2014	Venezuela: Cariaco Basin	10.617 N 65.167 W	Shallow Anoxic	Niskin bottle	0.0	314	0.2-2.7µm	b	17.6	36.4	6.76	0.46	0.20	1.75
+seawater	May-2014	Venezuela: Cariaco Basin	10.617 N 65.167 W	Shallow Anoxic	Niskin bottle	0.0	314	0.2-2.7µm	a	17.6	36.4	6.76	0.46	0.20	1.75
+seawater	May-2014	Venezuela: Cariaco Basin	10.617 N 65.167 W	Oxic-Anoxic Interface	Niskin bottle	0.0	295	0.2-2.7µm	b	17.7	36.4	0	0.14	0.22	0.81
+seawater	May-2014	Venezuela: Cariaco Basin	10.617 N 65.167 W	Oxic-Anoxic Interface	Niskin bottle	0.0	295	0.2-2.7µm	a	17.7	36.4	0	0.14	0.22	0.81
+seawater	May-2014	Venezuela: Cariaco Basin	10.617 N 65.167 W	Suboxic	Niskin bottle	12.0	234	0.2-2.7µm	b	17.9	36.4	0	0.03	0.02	0.08
+seawater	May-2014	Venezuela: Cariaco Basin	10.617 N 65.167 W	Suboxic	Niskin bottle	12.0	234	0.2-2.7µm	a	17.9	36.4	0	0.03	0.02	0.08
+seawater	May-2014	Venezuela: Cariaco Basin	10.617 N 65.167 W	Micro-oxic	Niskin bottle	31.9	198	0.2-2.7µm	b	18.1	36.4	0	0.00	0.00	0.02
+seawater	May-2014	Venezuela: Cariaco Basin	10.617 N 65.167 W	Micro-oxic	Niskin bottle	31.9	198	0.2-2.7µm	a	18.1	36.4	0	0.00	0.00	0.02
+seawater	May-2014	Venezuela: Cariaco Basin	10.617 N 65.167 W	Oxic	Niskin bottle	122.9	103	0.2-2.7µm	b	19.7	36.7	0	0.00	0.00	0.02
+seawater	May-2014	Venezuela: Cariaco Basin	10.617 N 65.167 W	Oxic	Niskin bottle	122.9	103	0.2-2.7µm	a	19.7	36.7	0	0.00	0.00	0.02
+seawater	May-2014	Venezuela: Cariaco Basin	10.617 N 65.167 W	Deep Anoxic, Sulfidic	Niskin bottle	0.0	900	>2.7µm	b	17.1	36.3	70.33	0.00	0.00	12.42
+seawater	May-2014	Venezuela: Cariaco Basin	10.617 N 65.167 W	Deep Anoxic, Sulfidic	Niskin bottle	0.0	900	>2.7µm	a	17.1	36.3	70.33	0.00	0.00	12.42
+seawater	May-2014	Venezuela: Cariaco Basin	10.617 N 65.167 W	Shallow Anoxic	Niskin bottle	0.0	314	>2.7µm	b	17.6	36.4	6.76	0.46	0.20	1.75
+seawater	May-2014	Venezuela: Cariaco Basin	10.617 N 65.167 W	Shallow Anoxic	Niskin bottle	0.0	314	>2.7µm	a	17.6	36.4	6.76	0.46	0.20	1.75
+seawater	May-2014	Venezuela: Cariaco Basin	10.617 N 65.167 W	Oxic-Anoxic Interface	Niskin bottle	0.0	295	>2.7µm	b	17.7	36.4	0	0.14	0.22	0.81
+seawater	May-2014	Venezuela: Cariaco Basin	10.617 N 65.167 W	Oxic-Anoxic Interface	Niskin bottle	0.0	295	>2.7µm	a	17.7	36.4	0	0.14	0.22	0.81
+seawater	May-2014	Venezuela: Cariaco Basin	10.617 N 65.167 W	Suboxic	Niskin bottle	12.0	234	>2.7µm	b	17.9	36.4	0	0.03	0.02	0.08
+seawater	May-2014	Venezuela: Cariaco Basin	10.617 N 65.167 W	Suboxic	Niskin bottle	12.0	234	>2.7µm	a	17.9	36.4	0	0.03	0.02	0.08
+seawater	May-2014	Venezuela: Cariaco Basin	10.617 N 65.167 W	Micro-oxic	Niskin bottle	31.9	198	>2.7µm	b	18.1	36.4	0	0.00	0.00	0.02
+seawater	May-2014	Venezuela: Cariaco Basin	10.617 N 65.167 W	Micro-oxic	Niskin bottle	31.9	198	>2.7µm	a	18.1	36.4	0	0.00	0.00	0.02
+seawater	May-2014	Venezuela: Cariaco Basin	10.617 N 65.167 W	Oxic	Niskin bottle	122.9	103	>2.7µm	b	19.7	36.7	0	0.00	0.00	0.02
+seawater	May-2014	Venezuela: Cariaco Basin	10.617 N 65.167 W	Oxic	Niskin bottle	122.9	103	>2.7µm	a	19.7	36.7	0	0.00	0.00	0.02
+seawater	Nov-2014	Venezuela: Cariaco Basin	10.617 N 65.167 W	Deep Anoxic, Sulfidic	Niskin bottle	0.00	900	0.2-2.7µm	b	17.11	36.26	119.98	0.00	0.00	10.83
+seawater	Nov-2014	Venezuela: Cariaco Basin	10.617 N 65.167 W	Deep Anoxic, Sulfidic	Niskin bottle	0.00	900	0.2-2.7µm	a	17.11	36.26	119.98	0.00	0.00	10.83
+seawater	Nov-2014	Venezuela: Cariaco Basin	10.617 N 65.167 W	Shallow Anoxic	Niskin bottle	0.00	267	0.2-2.7µm	b	17.76	36.38	0.00	0.13	0.01	0.18
+seawater	Nov-2014	Venezuela: Cariaco Basin	10.617 N 65.167 W	Shallow Anoxic	Niskin bottle	0.00	267	0.2-2.7µm	a	17.76	36.38	0.00	0.13	0.01	0.18
+seawater	Nov-2014	Venezuela: Cariaco Basin	10.617 N 65.167 W	Oxic-Anoxic Interface	Niskin bottle	0.00	247	0.2-2.7µm	b	17.83	36.39	0.00	0.03	0.01	0.01
+seawater	Nov-2014	Venezuela: Cariaco Basin	10.617 N 65.167 W	Oxic-Anoxic Interface	Niskin bottle	0.00	247	0.2-2.7µm	a	17.83	36.39	0.00	0.03	0.01	0.01
+seawater	Nov-2014	Venezuela: Cariaco Basin	10.617 N 65.167 W	Suboxic	Niskin bottle	0.41	237	0.2-2.7µm	b	17.88	36.40	0.00	0.03	0.02	0.01
+seawater	Nov-2014	Venezuela: Cariaco Basin	10.617 N 65.167 W	Suboxic	Niskin bottle	0.41	237	0.2-2.7µm	a	17.88	36.40	0.00	0.03	0.02	0.01
+seawater	Nov-2014	Venezuela: Cariaco Basin	10.617 N 65.167 W	Micro-oxic	Niskin bottle	14.07	200	0.2-2.7µm	b	18.09	36.43	0.00	0.00	0.00	0.01
+seawater	Nov-2014	Venezuela: Cariaco Basin	10.617 N 65.167 W	Micro-oxic	Niskin bottle	14.07	200	0.2-2.7µm	a	18.09	36.43	0.00	0.00	0.00	0.01
+seawater	Nov-2014	Venezuela: Cariaco Basin	10.617 N 65.167 W	Oxic	Niskin bottle	82.02	143	0.2-2.7µm	b	19.40	36.61	0.00	0.00	0.00	0.02
+seawater	Nov-2014	Venezuela: Cariaco Basin	10.617 N 65.167 W	Oxic	Niskin bottle	82.02	143	0.2-2.7µm	a	19.40	36.61	0.00	0.00	0.00	0.02
+seawater	Nov-2014	Venezuela: Cariaco Basin	10.617 N 65.167 W	Deep Anoxic, Sulfidic	Niskin bottle	0.00	900	>2.7µm	b	17.11	36.26	119.98	0.00	0.00	10.83
+seawater	Nov-2014	Venezuela: Cariaco Basin	10.617 N 65.167 W	Deep Anoxic, Sulfidic	Niskin bottle	0.00	900	>2.7µm	a	17.11	36.26	119.98	0.00	0.00	10.83
+seawater	Nov-2014	Venezuela: Cariaco Basin	10.617 N 65.167 W	Oxic-Anoxic Interface	Niskin bottle	0.00	247	>2.7µm	b	17.83	36.39	0.00	0.03	0.01	0.01
+seawater	Nov-2014	Venezuela: Cariaco Basin	10.617 N 65.167 W	Oxic-Anoxic Interface	Niskin bottle	0.00	247	>2.7µm	a	17.83	36.39	0.00	0.03	0.01	0.01
+seawater	Nov-2014	Venezuela: Cariaco Basin	10.617 N 65.167 W	Suboxic	Niskin bottle	0.41	237	>2.7µm	b	17.88	36.40	0.00	0.03	0.02	0.01
+seawater	Nov-2014	Venezuela: Cariaco Basin	10.617 N 65.167 W	Suboxic	Niskin bottle	0.41	237	>2.7µm	a	17.88	36.40	0.00	0.03	0.02	0.01
+seawater	Nov-2014	Venezuela: Cariaco Basin	10.617 N 65.167 W	Micro-oxic	Niskin bottle	14.07	200	>2.7µm	b	18.09	36.43	0.00	0.00	0	0.01
+seawater	Nov-2014	Venezuela: Cariaco Basin	10.617 N 65.167 W	Micro-oxic	Niskin bottle	14.07	200	>2.7µm	a	18.09	36.43	0.00	0.00	0	0.01
+seawater	Nov-2014	Venezuela: Cariaco Basin	10.617 N 65.167 W	Oxic	Niskin bottle	82.02	143	>2.7µm	b	19.40	36.61	0.00	0.00	0	0.02
+seawater	Nov-2014	Venezuela: Cariaco Basin	10.617 N 65.167 W	Oxic	Niskin bottle	82.02	143	>2.7µm	a	19.40	36.61	0.00	0.00	0	0.02
+seawater	May-2014	Venezuela: Cariaco Basin	10.617 N 65.167 W	Deep Anoxic, Sulfidic	Niskin bottle	0.0	900	0.2-2.7µm	b	17.1	36.3	70.33	0.00	0.00	12.42
+seawater	May-2014	Venezuela: Cariaco Basin	10.617 N 65.167 W	Deep Anoxic, Sulfidic	Niskin bottle	0.0	900	0.2-2.7µm	a	17.1	36.3	70.33	0.00	0.00	12.42
+seawater	May-2014	Venezuela: Cariaco Basin	10.617 N 65.167 W	Shallow Anoxic	Niskin bottle	0.0	314	0.2-2.7µm	b	17.6	36.4	6.76	0.46	0.20	1.75
+seawater	May-2014	Venezuela: Cariaco Basin	10.617 N 65.167 W	Shallow Anoxic	Niskin bottle	0.0	314	0.2-2.7µm	a	17.6	36.4	6.76	0.46	0.20	1.75
+seawater	May-2014	Venezuela: Cariaco Basin	10.617 N 65.167 W	Oxic-Anoxic Interface	Niskin bottle	0.0	295	0.2-2.7µm	b	17.7	36.4	0	0.14	0.22	0.81
+seawater	May-2014	Venezuela: Cariaco Basin	10.617 N 65.167 W	Oxic-Anoxic Interface	Niskin bottle	0.0	295	0.2-2.7µm	a	17.7	36.4	0	0.14	0.22	0.81
+seawater	May-2014	Venezuela: Cariaco Basin	10.617 N 65.167 W	Suboxic	Niskin bottle	12.0	234	0.2-2.7µm	b	17.9	36.4	0	0.03	0.02	0.08
+seawater	May-2014	Venezuela: Cariaco Basin	10.617 N 65.167 W	Suboxic	Niskin bottle	12.0	234	0.2-2.7µm	a	17.9	36.4	0	0.03	0.02	0.08
+seawater	May-2014	Venezuela: Cariaco Basin	10.617 N 65.167 W	Micro-oxic	Niskin bottle	31.9	198	0.2-2.7µm	b	18.1	36.4	0	0.00	0.00	0.02
+seawater	May-2014	Venezuela: Cariaco Basin	10.617 N 65.167 W	Micro-oxic	Niskin bottle	31.9	198	0.2-2.7µm	a	18.1	36.4	0	0.00	0.00	0.02
+seawater	May-2014	Venezuela: Cariaco Basin	10.617 N 65.167 W	Oxic	Niskin bottle	122.9	103	0.2-2.7µm	b	19.7	36.7	0	0.00	0.00	0.02
+seawater	May-2014	Venezuela: Cariaco Basin	10.617 N 65.167 W	Oxic	Niskin bottle	122.9	103	0.2-2.7µm	a	19.7	36.7	0	0.00	0.00	0.02
+seawater	May-2014	Venezuela: Cariaco Basin	10.617 N 65.167 W	Deep Anoxic, Sulfidic	Niskin bottle	0.0	900	>2.7µm	b	17.1	36.3	70.33	0.00	0.00	12.42
+seawater	May-2014	Venezuela: Cariaco Basin	10.617 N 65.167 W	Deep Anoxic, Sulfidic	Niskin bottle	0.0	900	>2.7µm	a	17.1	36.3	70.33	0.00	0.00	12.42
+seawater	May-2014	Venezuela: Cariaco Basin	10.617 N 65.167 W	Shallow Anoxic	Niskin bottle	0.0	314	>2.7µm	b	17.6	36.4	6.76	0.46	0.20	1.75
+seawater	May-2014	Venezuela: Cariaco Basin	10.617 N 65.167 W	Shallow Anoxic	Niskin bottle	0.0	314	>2.7µm	a	17.6	36.4	6.76	0.46	0.20	1.75
+seawater	May-2014	Venezuela: Cariaco Basin	10.617 N 65.167 W	Oxic-Anoxic Interface	Niskin bottle	0.0	295	>2.7µm	b	17.7	36.4	0	0.14	0.22	0.81
+seawater	May-2014	Venezuela: Cariaco Basin	10.617 N 65.167 W	Oxic-Anoxic Interface	Niskin bottle	0.0	295	>2.7µm	a	17.7	36.4	0	0.14	0.22	0.81
+seawater	May-2014	Venezuela: Cariaco Basin	10.617 N 65.167 W	Suboxic	Niskin bottle	12.0	234	>2.7µm	b	17.9	36.4	0	0.03	0.02	0.08
+seawater	May-2014	Venezuela: Cariaco Basin	10.617 N 65.167 W	Suboxic	Niskin bottle	12.0	234	>2.7µm	a	17.9	36.4	0	0.03	0.02	0.08
+seawater	May-2014	Venezuela: Cariaco Basin	10.617 N 65.167 W	Micro-oxic	Niskin bottle	31.9	198	>2.7µm	b	18.1	36.4	0	0.00	0.00	0.02
+seawater	May-2014	Venezuela: Cariaco Basin	10.617 N 65.167 W	Micro-oxic	Niskin bottle	31.9	198	>2.7µm	a	18.1	36.4	0	0.00	0.00	0.02
+seawater	May-2014	Venezuela: Cariaco Basin	10.617 N 65.167 W	Oxic	Niskin bottle	122.9	103	>2.7µm	b	19.7	36.7	0	0.00	0.00	0.02
+seawater	May-2014	Venezuela: Cariaco Basin	10.617 N 65.167 W	Oxic	Niskin bottle	122.9	103	>2.7µm	a	19.7	36.7	0	0.00	0.00	0.02
